@@ -1,0 +1,21 @@
+from setuptools import setup, find_packages
+
+with open('README.md', encoding='utf-8') as f:
+    long_description = f.read()
+
+setup(
+    name='iris',
+    version='1.0.0',
+    install_requires=[
+        "transformers",
+        "sentencepiece",
+        "sacremoses",
+        "sounddevice",
+        "silero-vad",
+    ],
+    package_dir={'':'src'},
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url='https://github.com/newswangerd/iris',
+    description='Intelligent Real-time Interpretation System'
+)

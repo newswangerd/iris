@@ -1,0 +1,6 @@
+- Move diarization into separate process or thread
+- Set up events for:
+  - Initialization
+  - Pause recording
+- Remove hugging face token from code
+- Create some kind of kind indication when the system is getting overloaded
