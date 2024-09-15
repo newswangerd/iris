@@ -65,7 +65,9 @@ class Settings:
     model_path: str = "base"
     compute_type: str = "default"
     gpu_device_index: int = 0
-    device: str = "cpu"
+    whisper_device: str = "cpu"
+    translation_device: str = "cpu"
+    tts_device: str = "cpu"
     beam_size: int = 5
     initial_prompt: Optional[str] = None
     suppress_tokens: List[int] = field(default_factory=default_suppress_tokens)

@@ -19,12 +19,12 @@ class TTSWorker(IRISWorker):
             self.tts_pipe = pipeline(
                 "text-to-speech",
                 model=f"facebook/mms-tts-{TTS_LANG_MAP[self.args.settings.external_lang]}",
-                device="cpu",
+                device=args.settings.tts_device,
             )
             self.tts_trans_pipe = pipeline(
                 "translation",
                 model=f"Helsinki-NLP/opus-mt-{self.args.settings.user_lang}-{self.args.settings.external_lang}",
-                device="cpu",
+                device=args.settings.translation_device,
             )
         else:
             self.tts_pipe = None

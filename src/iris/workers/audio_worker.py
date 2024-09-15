@@ -9,13 +9,11 @@ class AudioWorker(IRISWorker):
     def __init__(self, audio_queue, args: ProcessArgs):
         self.audio_queue = audio_queue
         self.args = args
-
-    def _run(self) -> None:
-        audio_interface = pyaudio.PyAudio()
+        self.audio_interface = pyaudio.PyAudio()
         if self.args.settings.input_device_index is None:
-            default_device = audio_interface.get_default_input_device_info()
+            default_device = self.audio_interface.get_default_input_device_info()
             input_device_index = default_device["index"]
-        stream = audio_interface.open(
+        self.stream = self.audio_interface.open(
             rate=self.args.settings.sample_rate,
             format=pyaudio.paInt16,
             channels=1,
@@ -24,10 +22,11 @@ class AudioWorker(IRISWorker):
             input_device_index=self.args.settings.input_device_index,
         )
 
+    def _run(self) -> None:
         try:
             while not self.args.shutdown_event.is_set():
                 try:
-                    data = stream.read(self.args.settings.buffer_size)
+                    data = self.stream.read(self.args.settings.buffer_size)
 
                 except OSError as e:
                     if e.errno == pyaudio.paInputOverflowed:
@@ -53,6 +52,6 @@ class AudioWorker(IRISWorker):
                 "Audio data worker process " "finished due to KeyboardInterrupt"
             )
         finally:
-            stream.stop_stream()
-            stream.close()
-            audio_interface.terminate()
+            self.stream.stop_stream()
+            self.stream.close()
+            self.audio_interface.terminate()

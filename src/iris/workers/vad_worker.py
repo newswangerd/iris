@@ -124,7 +124,7 @@ class VADWorker(IRISWorker):
                 ),
                 channel=OutputChannel.TTS if is_tts else OutputChannel.SUB,
                 speaker=speaker,
-                timestamps=timestamps
+                timestamps=timestamps,
             )
         )
 
@@ -176,8 +176,8 @@ class VADWorker(IRISWorker):
                         b"".join(list(rolling_buffer) + self.buffer), dtype=np.int16
                     )
                 )
-                self.dp.send_diarized(audio)
-                # self.send_audio(audio)
+                # self.dp.send_diarized(audio)
+                self.send_audio(audio)
                 self.buffer.clear()
                 rolling_buffer.clear()
             else:

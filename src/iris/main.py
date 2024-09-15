@@ -15,7 +15,13 @@ from iris.gui import UserInterface
 
 def main():
     print("Starting")
-    settings = Settings(external_lang="en", user_lang="es")
+    settings = Settings(
+        external_lang="ru",
+        user_lang="en",
+        whisper_device="cpu",
+        translation_device="mps",
+        tts_device="cpu",
+    )
 
     audio_out_q = mp.Queue()
     to_transcribe_q = mp.Queue()
@@ -25,7 +31,7 @@ def main():
     sub_translation = pipeline(
         "translation",
         model=f"Helsinki-NLP/opus-mt-{settings.external_lang}-{settings.user_lang}",
-        device="cpu",
+        device=settings.translation_device,
     )
 
     args = ProcessArgs(settings, ui_update_q)

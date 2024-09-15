@@ -64,8 +64,8 @@ class UserInterface:
             self.root,
             text="sub",
             justify="center",
-            font=("Arial", 12),
-            fg="grey",
+            font=("Arial", 14),
+            fg="white",
             bg=self.root.cget("background"),
             wraplength=1000,
         )
@@ -81,8 +81,8 @@ class UserInterface:
             highlightthickness=0,
         )
 
-        self.status_indicator.place(relx=0.01, rely=0.95)
-        self.tts_label.place(relx=0.95, rely=0.95)
+        self.status_indicator.place(relx=0.01, y=5)
+        self.tts_label.place(relx=0.95, y=5)
         self.set_recording_status(RecorderState.OFFLINE)
 
     def set_recording_status(self, state: RecorderState):
@@ -119,9 +119,13 @@ class UserInterface:
     def transcription_callback(self, msg: TranscriptionMsg):
         if not msg.text:
             return
-        translated = self.sub_translation(msg.text)[0]["translation_text"]
-        # translated = msg.text
-        self.add_subtitles(f"{msg.speaker}: {translated}")
+        print(msg)
+
+        if msg.msg_lang != self.args.settings.user_lang:
+            text = self.sub_translation(msg.text)[0]["translation_text"]
+        else:
+            text = msg.text
+        self.add_subtitles(text)
 
         if msg.channel == OutputChannel.TTS:
             self.tts_q.put(
@@ -139,8 +143,8 @@ class UserInterface:
                 self.set_recording_status(msg.set_recording_state)
             if msg.set_tts_status is not None:
                 if msg.set_tts_status:
-                    self.tts_label["text"] = 'tts'
+                    self.tts_label["text"] = "tts"
                     self.args.is_tts_mode.set()
                 else:
-                    self.tts_label["text"] = 'sub'
+                    self.tts_label["text"] = "sub"
                     self.args.is_tts_mode.clear()

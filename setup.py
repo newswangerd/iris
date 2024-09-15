@@ -12,6 +12,10 @@ setup(
         "sacremoses",
         "sounddevice",
         "silero-vad",
+        "PyAudio",
+        "faster-whisper",
+        "pyannote.audio",
+
     ],
     package_dir={'':'src'},
     long_description=long_description,

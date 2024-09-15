@@ -20,7 +20,7 @@ class WhisperWorker(IRISWorker):
         self.args = args
         self.model = faster_whisper.WhisperModel(
             model_size_or_path=self.args.settings.model_path,
-            device=self.args.settings.device,
+            device=self.args.settings.whisper_device,
             compute_type=self.args.settings.compute_type,
             device_index=self.args.settings.gpu_device_index,
             num_workers=2,
@@ -29,6 +29,7 @@ class WhisperWorker(IRISWorker):
     def _run(self) -> None:
         msg: VoiceChunkMsg
         for msg in iter(self.audio_q.get, None):
+            print(msg)
             segments, info = self.model.transcribe(
                 msg.audio,
                 language=msg.msg_lang,
