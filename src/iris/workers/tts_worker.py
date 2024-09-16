@@ -1,5 +1,5 @@
 from iris.workers.base_worker import IRISWorker
-from iris.data_types import ProcessArgs, TTSMsg, UIStateUpdateMsg
+from iris.data_types import ProcessArgs, TTSMsg
 from transformers import pipeline
 import sounddevice
 
@@ -43,4 +43,4 @@ class TTSWorker(IRISWorker):
                 out["audio"][0], samplerate=out["sampling_rate"], blocking=True
             )
             self.args.pause_recording_event.clear()
-            self.args.ui_update_q.put(UIStateUpdateMsg(set_tts_status=False))
+            self.args.ui_update_q.put({"set_tts_status": {"state": False}})

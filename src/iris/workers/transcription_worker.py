@@ -8,7 +8,6 @@ from iris.data_types import (
     VoiceChunkMsg,
     ProcessArgs,
     OutputChannel,
-    UIStateUpdateMsg,
 )
 from iris.workers.base_worker import IRISWorker
 import torch.multiprocessing as mp
@@ -29,7 +28,7 @@ class WhisperWorker(IRISWorker):
     def _run(self) -> None:
         msg: VoiceChunkMsg
         for msg in iter(self.audio_q.get, None):
-            print(msg)
+            print(f"received message {msg.count}")
             segments, info = self.model.transcribe(
                 msg.audio,
                 language=msg.msg_lang,
@@ -44,14 +43,16 @@ class WhisperWorker(IRISWorker):
             transcription = " ".join(seg.text for seg in segments)
             transcription = transcription.strip()
             self.args.ui_update_q.put(
-                UIStateUpdateMsg(
-                    add_transcription=TranscriptionMsg(
-                        msg_lang=msg.msg_lang,
-                        target_lang=msg.target_lang,
-                        speaker=msg.speaker,
-                        time_start=msg.time_start,
-                        text=transcription,
-                        channel=msg.channel,
-                    )
-                )
+                {
+                    "add_transcription": {
+                        "msg": TranscriptionMsg(
+                            msg_lang=msg.msg_lang,
+                            target_lang=msg.target_lang,
+                            speaker=msg.speaker,
+                            time_start=msg.time_start,
+                            text=transcription,
+                            channel=msg.channel,
+                        )
+                    }
+                }
             )

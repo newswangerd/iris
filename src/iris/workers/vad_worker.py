@@ -4,7 +4,6 @@ from iris.data_types import (
     ProcessArgs,
     OutputChannel,
     RecorderState,
-    UIStateUpdateMsg,
 )
 import torch.multiprocessing as mp
 import numpy as np
@@ -109,6 +108,9 @@ class VADWorker(IRISWorker):
     def send_audio(self, audio, speaker=None, timestamps=[0]):
         is_tts = self.args.is_tts_mode.is_set()
 
+        if is_tts:
+            self.args.pause_recording_event.set()
+
         self.audio_out_q.put(
             VoiceChunkMsg(
                 audio=audio,
@@ -125,23 +127,38 @@ class VADWorker(IRISWorker):
                 channel=OutputChannel.TTS if is_tts else OutputChannel.SUB,
                 speaker=speaker,
                 timestamps=timestamps,
+                count=self.counter,
             )
         )
 
+        print(f"Sent message {self.counter}")
+
+        self.counter += 1
+
     def _run(self) -> None:
         self.args.ui_update_q.put(
-            UIStateUpdateMsg(set_recording_state=RecorderState.LISTENING)
+            {"set_recording_state": {"state": RecorderState.LISTENING}}
         )
         self.buffer = []
         rolling_buffer = deque(maxlen=int(self.frames_per_second / 2))
+        first_pause = True
+        self.counter = 0
         for aud in iter(self.audio_in_q.get, None):
             if self.args.pause_recording_event.is_set():
-                self.args.ui_update_q.put(
-                    UIStateUpdateMsg(set_recording_state=RecorderState.OFFLINE)
-                )
+                if first_pause:
+                    self.args.ui_update_q.put(
+                        {"set_recording_state": {"state": RecorderState.OFFLINE}}
+                    )
+                first_pause = False
                 if len(self.buffer) > 0:
                     self.buffer = []
                 continue
+            elif first_pause is False:
+                self.args.ui_update_q.put(
+                    {"set_recording_state": {"state": RecorderState.LISTENING}}
+                )
+
+            first_pause = True
 
             vad = self.model(torch.from_numpy(self.process_stream(aud)), 16000).item()
 
@@ -149,23 +166,26 @@ class VADWorker(IRISWorker):
                 vad >= self.args.settings.silero_threshold and not self.recording
             ) or vad >= 0.9:
                 over_time = len(self.buffer) / self.frames_per_second
-                if over_time >= CHUNK_SECONDS + 1:
+                if over_time >= CHUNK_SECONDS + 1 and not self.args.is_tts_mode.is_set():
                     diff = over_time - CHUNK_SECONDS
                     self.vad_countdown = int(self.frames_per_second * (1 / diff))
                 else:
                     self.vad_countdown = self.frames_per_second
+                if not self.recording:
+                    self.args.ui_update_q.put(
+                        {"set_recording_state": {"state": RecorderState.RECORDING}}
+                    )
                 self.recording = True
-                self.args.ui_update_q.put(
-                    UIStateUpdateMsg(set_recording_state=RecorderState.RECORDING)
-                )
 
             if self.vad_countdown > 0:
                 self.vad_countdown -= 1
             else:
+                if self.recording:
+                    self.args.ui_update_q.put(
+                        {"set_recording_state": {"state": RecorderState.LISTENING}}
+                    )
+
                 self.recording = False
-                self.args.ui_update_q.put(
-                    UIStateUpdateMsg(set_recording_state=RecorderState.LISTENING)
-                )
 
             if self.recording:
                 self.buffer.append(aud)
@@ -176,8 +196,8 @@ class VADWorker(IRISWorker):
                         b"".join(list(rolling_buffer) + self.buffer), dtype=np.int16
                     )
                 )
-                # self.dp.send_diarized(audio)
-                self.send_audio(audio)
+                self.dp.send_diarized(audio)
+                # self.send_audio(audio)
                 self.buffer.clear()
                 rolling_buffer.clear()
             else:

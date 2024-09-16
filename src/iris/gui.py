@@ -2,11 +2,9 @@ import tkinter as tk
 from iris.data_types import (
     ProcessArgs,
     RecorderState,
-    Settings,
     OutputChannel,
     TranscriptionMsg,
     TTSMsg,
-    UIStateUpdateMsg,
 )
 from torch import multiprocessing as mp
 import threading
@@ -28,17 +26,12 @@ class Subtitle:
 
 
 class UserInterface:
-    def __init__(
-        self, tts_q: mp.Queue, sub_translation, args: ProcessArgs, ui_udate_q: mp.Queue
-    ):
+    def __init__(self, ui_update_q: mp.Queue):
         self.root = tk.Tk()
         self.subtitles = Subtitle()
-        self.tts_q = tts_q
-        self.args = args
-        self.ui_udate_q = ui_udate_q
+        self.ui_update_q = ui_update_q
 
         self.init_gui()
-        self.sub_translation = sub_translation
 
     def init_gui(self):
         self.root.title("IRIS")
@@ -83,6 +76,7 @@ class UserInterface:
 
         self.status_indicator.place(relx=0.01, y=5)
         self.tts_label.place(relx=0.95, y=5)
+        self.root.bind("<space>", lambda x: self.toggle_tts())
         self.set_recording_status(RecorderState.OFFLINE)
 
     def set_recording_status(self, state: RecorderState):
@@ -97,54 +91,11 @@ class UserInterface:
         )
 
     def toggle_tts(self):
-        if self.args.is_tts_mode.is_set():
-            self.args.ui_update_q.put(UIStateUpdateMsg(set_tts_status=False))
-        else:
-            self.args.ui_update_q.put(UIStateUpdateMsg(set_tts_status=True))
+        self.ui_update_q.put({"toggle_tts": {}})
 
     def add_subtitles(self, text):
         self.subtitles.add(text)
         self.subtitle_label["text"] = str(self.subtitles)
 
     def run(self):
-        # self.root.bind("<Return>", lambda x: self.recorder.recorder.stop())
-        self.root.bind("<space>", lambda x: self.toggle_tts())
-        # self.root.after(500, self.start_threads)
-
-        threading.Thread(target=self.ui_update_thread).start()
-
         self.root.mainloop()
-        self.root.destroy()
-
-    def transcription_callback(self, msg: TranscriptionMsg):
-        if not msg.text:
-            return
-        print(msg)
-
-        if msg.msg_lang != self.args.settings.user_lang:
-            text = self.sub_translation(msg.text)[0]["translation_text"]
-        else:
-            text = msg.text
-        self.add_subtitles(text)
-
-        if msg.channel == OutputChannel.TTS:
-            self.tts_q.put(
-                TTSMsg(
-                    text=msg.text,
-                )
-            )
-
-    def ui_update_thread(self):
-        msg: UIStateUpdateMsg
-        for msg in iter(self.ui_udate_q.get, None):
-            if msg.add_transcription is not None:
-                self.transcription_callback(msg.add_transcription)
-            if msg.set_recording_state is not None:
-                self.set_recording_status(msg.set_recording_state)
-            if msg.set_tts_status is not None:
-                if msg.set_tts_status:
-                    self.tts_label["text"] = "tts"
-                    self.args.is_tts_mode.set()
-                else:
-                    self.tts_label["text"] = "sub"
-                    self.args.is_tts_mode.clear()

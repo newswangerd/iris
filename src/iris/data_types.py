@@ -35,6 +35,7 @@ class VoiceChunkMsg:
     speaker: Optional[str] = None
     timestamps: List[float] = field(default_factory=default_timestamps)
     channel: OutputChannel = OutputChannel.SUB
+    count: Optional[int] = 0
 
 
 @dataclass
@@ -51,13 +52,6 @@ class TranscriptionMsg:
 class TTSMsg:
     text: str
     time_start: Optional[float] = field(default_factory=time.time)
-
-
-@dataclass
-class UIStateUpdateMsg:
-    add_transcription: Optional[TranscriptionMsg] = None
-    set_recording_state: Optional[RecorderState] = None
-    set_tts_status: Optional[bool] = None
 
 
 @dataclass
