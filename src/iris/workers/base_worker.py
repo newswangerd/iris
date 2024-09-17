@@ -5,6 +5,7 @@ class IRISWorker:
     @classmethod
     def _start(cls, *args, worker_intialized=None, **kwargs):
         worker = cls(*args, **kwargs)
+
         if worker_intialized:
             worker_intialized.set()
         try:

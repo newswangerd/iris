@@ -68,7 +68,7 @@ class MainThread(Thread):
             text = self.sub_translation(msg.text)[0]["translation_text"]
         else:
             text = msg.text
-        self.ui.add_subtitles(text)
+        self.ui.add_subtitles("- " + msg.text)
 
         if msg.channel == OutputChannel.TTS:
             self.tts_q.put(
@@ -111,26 +111,26 @@ def main():
 
         audio_start = mp.Event()
         whisper_start = mp.Event()
-        vad_start = mp.Event()
+        # vad_start = mp.Event()
         tts_start = mp.Event()
 
-        AudioWorker.start_process(audio_out_q, args, worker_intialized=audio_start)
+        AudioWorker.start_process(to_transcribe_q, args, worker_intialized=audio_start)
         WhisperWorker.start_process(
             to_transcribe_q, args, worker_intialized=whisper_start
         )
-        VADWorker.start_process(
-            audio_out_q,
-            to_transcribe_q,
-            args,
-            worker_intialized=vad_start,
-        )
+        # VADWorker.start_process(
+        #     audio_out_q,
+        #     to_transcribe_q,
+        #     args,
+        #     worker_intialized=vad_start,
+        # )
         TTSWorker.start_process(tts_q, args, worker_intialized=tts_start)
 
         while not all(
             [
                 audio_start.is_set(),
                 whisper_start.is_set(),
-                vad_start.is_set(),
+                # vad_start.is_set(),
                 tts_start.is_set(),
             ]
         ):
@@ -150,7 +150,6 @@ def main():
         to_transcribe_q.close()
         ui_update_q.close()
         tts_q.close()
-        ui.root.destroy()
 
 
 if __name__ == "__main__":
