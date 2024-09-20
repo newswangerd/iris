@@ -9,6 +9,8 @@ from pydantic import BaseModel, Field, SecretStr, field_serializer
 from pydantic.json_schema import SkipJsonSchema
 from pydantic.types import UUID4
 
+from iris.server import settings
+
 
 class Role(str, Enum):
     ADMIN = "admin"
@@ -21,7 +23,7 @@ class Languages(str, Enum):
     SPANISH = "es"
 
 
-MESSAGE_DIR = "/Users/david/code/iris/web_messages/"
+MESSAGE_DIR = settings.data_path
 
 
 def get_top_level_dirs(path):
@@ -65,8 +67,8 @@ class Message(BaseModel):
     text: str
     user: str
     language: str
-    translated_text: Optional[str] = None
-    corrected_text: Optional[str] = None
+    translated_text: dict[str, str] = {}
+    original_text: Optional[str] = None
     is_accepted: Optional[bool] = None
     re_recording: Optional[UUID4] = None
     id: UUID4 = Field(default_factory=lambda: uuid.uuid4())

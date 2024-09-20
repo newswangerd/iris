@@ -5,14 +5,8 @@ import torch.multiprocessing as mp
 from transformers import pipeline
 from transformers.models.fnet.tokenization_fnet import Dict
 
-from iris.data_types import (
-    OutputChannel,
-    ProcessArgs,
-    RecorderState,
-    Settings,
-    TranscriptionMsg,
-    TTSMsg,
-)
+from iris.data_types import (OutputChannel, ProcessArgs, RecorderState,
+                             Settings, TranscriptionMsg, TTSMsg)
 from iris.gui import UserInterface
 from iris.workers import AudioWorker, TTSWorker, VADWorker, WhisperWorker
 

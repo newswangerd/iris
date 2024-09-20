@@ -8,11 +8,11 @@ const Interpreter = ({ client, user }) => {
   const mediaRecorder = useRef(null);
   const [stream, setStream] = useState(null);
   const ws = useRef(null);
-  const wsTranslation = useRef(null);
   const [currentMsg, setCurrentMsg] = useState(null);
   const [sentMsg, setSentMsg] = useState([]);
   const [waitingForMessage, setWaitingForMessage] = useState(false);
   const [hasAudioPerms, setHasAudioPerms] = useState(false);
+  const synth = window.speechSynthesis;
 
   useEffect(() => {
     // Initialize WebSocket connection
@@ -26,25 +26,18 @@ const Interpreter = ({ client, user }) => {
     new_uri += "//" + loc.host;
 
     const whisper_ws = new_uri + "/api/ws-whisper";
-    const translation_ws = new_uri + "/api/ws-translation";
-
-    if (user.role === "admin") {
-      console.log("creating translation websocket");
-      wsTranslation.current = new WebSocket(translation_ws);
-      wsTranslation.current.addEventListener("message", (event) => {
-        if (event.data) {
-          setSentMsg((oldArray) => [JSON.parse(event.data), ...oldArray]);
-        }
-      });
-    }
 
     ws.current = new WebSocket(whisper_ws);
 
     ws.current.addEventListener("message", (event) => {
       setWaitingForMessage(false);
-      const data = JSON.parse(event.data);
-      if (data.id) {
-        setCurrentMsg(data);
+      const msg = JSON.parse(event.data);
+      if (msg.id) {
+        if (msg.user === user.name && msg.is_accepted === null) {
+          setCurrentMsg(msg);
+        } else if (msg.user === user.name || msg.language !== user.language) {
+          setSentMsg((oldArray) => [JSON.parse(event.data), ...oldArray]);
+        }
       }
     });
 
@@ -58,12 +51,17 @@ const Interpreter = ({ client, user }) => {
 
     const wsCurrent = ws.current;
     return () => {
-      if (wsTranslation.current) {
-        wsTranslation.current.close();
-      }
       wsCurrent.close();
     };
   }, []);
+
+  const sayTTS = (message, lang) => {
+    const utterance = new SpeechSynthesisUtterance(
+      message.translated_text[lang],
+    );
+    utterance.lang = lang;
+    synth.speak(utterance);
+  };
 
   const isWebSocketReady = (ws) => {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -83,7 +81,13 @@ const Interpreter = ({ client, user }) => {
       console.error("WebSocket is not ready");
       return;
     }
-    ws.current.send("START");
+    const start_msg = "START:";
+
+    if (currentMsg) {
+      ws.current.send(start_msg + currentMsg.id);
+    } else {
+      ws.current.send(start_msg);
+    }
 
     const mime = MediaRecorder.isTypeSupported('audio/webm;codecs="opus"')
       ? 'audio/webm;codecs="opus"'
@@ -119,17 +123,15 @@ const Interpreter = ({ client, user }) => {
 
   const acceptMsg = (message) => {
     message.is_accepted = true;
-    client.accept_message(message).then(() => {
-      setCurrentMsg(null);
-      setSentMsg((oldArray) => [message, ...oldArray]);
-    });
+    setCurrentMsg(null);
+    // setSentMsg((oldArray) => [message, ...oldArray]);
+    client.accept_message(message).then(() => {});
   };
 
   const rejectMsg = (message) => {
     message.is_accepted = false;
-    client.reject_message(message).then(() => {
-      setCurrentMsg(null);
-    });
+    setCurrentMsg(null);
+    client.reject_message(message).then(() => {});
   };
 
   return (
@@ -141,14 +143,16 @@ const Interpreter = ({ client, user }) => {
       >
         {currentMsg ? (
           <Message
+            key={-1}
             rejectMsg={() => rejectMsg(currentMsg)}
             acceptMsg={() => acceptMsg(currentMsg)}
             message={currentMsg}
             user={user}
+            sayTTS={sayTTS}
           />
         ) : null}
-        {sentMsg.map((msg) => (
-          <Message user={user} key={msg.id} message={msg} />
+        {sentMsg.map((msg, k) => (
+          <Message sayTTS={sayTTS} user={user} key={k} message={msg} />
         ))}
       </Flex>
 
@@ -166,7 +170,7 @@ const Interpreter = ({ client, user }) => {
             // isLoading={isRecording || waitingForMessage}
             isDisabled={(waitingForMessage && !isRecording) || !hasAudioPerms}
             size={"lg"}
-            height={"75px"}
+            height={"125px"}
             width={"100%"}
           >
             {getButtonIcon(

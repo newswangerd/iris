@@ -6,7 +6,8 @@ import numpy as np
 import pyaudio
 import torch
 
-from iris.data_types import OutputChannel, ProcessArgs, RecorderState, VoiceChunkMsg
+from iris.data_types import (OutputChannel, ProcessArgs, RecorderState,
+                             VoiceChunkMsg)
 from iris.workers.base_worker import IRISWorker
 
 CHUNK_SECONDS = 5

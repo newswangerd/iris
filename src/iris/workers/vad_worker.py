@@ -11,7 +11,8 @@ from pyannote.audio.core.model import Output
 from scipy.io.wavfile import write
 from torchaudio.io import StreamReader
 
-from iris.data_types import OutputChannel, ProcessArgs, RecorderState, VoiceChunkMsg
+from iris.data_types import (OutputChannel, ProcessArgs, RecorderState,
+                             VoiceChunkMsg)
 from iris.workers.base_worker import IRISWorker
 
 CHUNK_SECONDS = 5

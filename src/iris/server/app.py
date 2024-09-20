@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from iris.server import settings
 from iris.server.api import api, auth_codes
 from iris.server.auth import create_token
 from iris.server.models import Message, User
@@ -50,7 +51,7 @@ app.mount(
 )
 app.mount(
     "/",
-    StaticFiles(directory="/Users/david/code/iris/my-app/build", html=True),
+    StaticFiles(directory=settings.static_root, html=True),
     name="static",
 )
 
@@ -59,6 +60,7 @@ if __name__ == "__main__":
         "app:app",
         host="0.0.0.0",
         port=8000,
-        # ssl_keyfile="/Users/david/code/iris/key.pem",
-        # ssl_certfile="/Users/david/code/iris/cert.pem",
+        ssl_keyfile=settings.ssl_keyfile,
+        ssl_certfile=settings.ssl_certfile,
+        reload=True,
     )

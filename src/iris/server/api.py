@@ -11,7 +11,7 @@ from pydantic.types import UUID4
 
 from iris.server import settings
 from iris.server.auth import create_token, get_current_user
-from iris.server.models import Message, User
+from iris.server.models import Languages, Message, User
 from iris.server.transcription import Transcribulator
 
 transcribulator = Transcribulator()
@@ -20,7 +20,7 @@ transcribulator = Transcribulator()
 # This is kind of an abomination, but I don't know what else to do. If the websocket isn't
 # running on the same process (or maybe even the same thread) as the instance of this class,
 # it will absolutely break.
-class PubSub:
+class MessageBroker:
     def __init__(self):
         self.sockets: dict[str, WebSocket] = {}
 
@@ -33,7 +33,14 @@ class PubSub:
         if id in self.sockets:
             del self.sockets[id]
 
+    async def reap(
+        self,
+    ):
+        # TODO: loop through the current sockets and remove any closed ones
+        pass
+
     async def send(self, data):
+        # TODO: do this with asyncio.gather
         to_del = []
         for k, sock in self.sockets.items():
             try:
@@ -42,10 +49,10 @@ class PubSub:
                 print("Removing socket ", k)
                 to_del.append(k)
         for k in to_del:
-            del self.sockets[k]
+            self.remove(k)
 
 
-translated_pub_sub = PubSub()
+translated_broker = MessageBroker()
 
 
 class CorrectedMessage(BaseModel):
@@ -60,25 +67,47 @@ api = FastAPI(dependencies=[Depends(get_current_user)])
 auth_codes: dict[str, str] = {}
 
 
+async def translate_and_send(m: Message):
+    print("adding translation")
+    if m.language == settings.base_language:
+        for lang in settings.supported_languages:
+            m.translated_text[lang] = transcribulator.translate(
+                m.text, (m.language, lang)
+            )
+    else:
+        m.translated_text[settings.base_language] = transcribulator.translate(
+            m.text,
+            (m.language, settings.base_language),
+        )
+
+    await translated_broker.send(m.json())
+    print(m)
+    m.save_to_file()
+
+
 @api.post("/messages/{user}/accept/{id}")
 async def accept_message(
-    id: UUID4, user: str, update_text: Optional[CorrectedMessage] = None
+    id: UUID4,
+    user: str,
+    background_tasks: BackgroundTasks,
+    update_text: Optional[CorrectedMessage] = None,
 ):
+    print("got accept")
     m = Message.load_from_file(user, id)
 
-    if update_text:
-        m.corrected_text = update_text.corrected_text
-        to_trans = m.corrected_text
-    else:
-        to_trans = m.text
-
-    # if m.language != settings.USER_LANG:
-    print("adding translation")
-    m.translated_text = await asyncio.to_thread(transcribulator.translate, to_trans)
+    if m.is_accepted:
+        return
 
     m.is_accepted = True
+
+    if update_text:
+        m.original_text = m.text
+        m.text = update_text.corrected_text
+
+    background_tasks.add_task(translate_and_send, m)
+
     m.save_to_file()
-    await translated_pub_sub.send(m.json())
+    print("finished")
 
 
 @api.post("/messages/{user}/reject/{id}")
@@ -128,23 +157,29 @@ async def whisper(websocket: WebSocket, current_user: User = Depends(get_current
 
     is_streaming = False
     buffer = deque()
+    recording_meta = None
+    id = translated_broker.register(websocket)
 
     while True:
         try:
             data = await websocket.receive()
             if "text" in data:
-                if data["text"] == "START":
+                if data["text"].startswith("START:"):
+                    _, recording_meta = data["text"].split(":", maxsplit=1)
+
                     print("start stream")
                     buffer.clear()
                     is_streaming = True
                 elif data["text"] == "STOP":
+
                     if len(buffer) == 0:
                         continue
                     print("end stream")
 
                     message = await asyncio.to_thread(
-                        transcribulator.transcribe, buffer, current_user
+                        transcribulator.transcribe, buffer, current_user, recording_meta
                     )
+                    recording_meta = None
                     if message:
                         await websocket.send_text(message.json())
                     else:
@@ -154,16 +189,17 @@ async def whisper(websocket: WebSocket, current_user: User = Depends(get_current
             elif is_streaming:
                 buffer.append(data["bytes"])
         except:
+            translated_broker.remove(id)
             break
 
 
-@api.websocket("/ws-translation")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    id = translated_pub_sub.register(websocket)
-    while True:
-        try:
-            data = await websocket.receive()
-        except Exception as e:
-            translated_pub_sub.remove(id)
-            break
+# @api.websocket("/ws-translation")
+# async def websocket_endpoint(websocket: WebSocket):
+#     await websocket.accept()
+#     id = translated_pub_sub.register(websocket)
+#     while True:
+#         try:
+#             data = await websocket.receive()
+#         except Exception as e:
+#             translated_pub_sub.remove(id)
+#             break
