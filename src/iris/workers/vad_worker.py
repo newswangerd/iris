@@ -1,25 +1,18 @@
-from pyannote.audio.core.model import Output
-from iris.data_types import (
-    VoiceChunkMsg,
-    ProcessArgs,
-    OutputChannel,
-    RecorderState,
-)
-import torch.multiprocessing as mp
-import numpy as np
-from collections import deque
-import torch
-from pyannote.audio import Pipeline as PyAnnotePipeline
-
-from iris.workers.base_worker import IRISWorker
-
-from torchaudio.io import StreamReader
-from scipy.io.wavfile import write
-
-import time
 import os
-import torchaudio
+import time
+from collections import deque
 
+import numpy as np
+import torch
+import torch.multiprocessing as mp
+import torchaudio
+from pyannote.audio import Pipeline as PyAnnotePipeline
+from pyannote.audio.core.model import Output
+from scipy.io.wavfile import write
+from torchaudio.io import StreamReader
+
+from iris.data_types import OutputChannel, ProcessArgs, RecorderState, VoiceChunkMsg
+from iris.workers.base_worker import IRISWorker
 
 CHUNK_SECONDS = 5
 
@@ -166,7 +159,10 @@ class VADWorker(IRISWorker):
                 vad >= self.args.settings.silero_threshold and not self.recording
             ) or vad >= 0.9:
                 over_time = len(self.buffer) / self.frames_per_second
-                if over_time >= CHUNK_SECONDS + 1 and not self.args.is_tts_mode.is_set():
+                if (
+                    over_time >= CHUNK_SECONDS + 1
+                    and not self.args.is_tts_mode.is_set()
+                ):
                     diff = over_time - CHUNK_SECONDS
                     self.vad_countdown = int(self.frames_per_second * (1 / diff))
                 else:

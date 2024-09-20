@@ -1,19 +1,20 @@
+import time
+from threading import Thread
+
 import torch.multiprocessing as mp
+from transformers import pipeline
 from transformers.models.fnet.tokenization_fnet import Dict
-from iris.workers import WhisperWorker, VADWorker, AudioWorker, TTSWorker
+
 from iris.data_types import (
-    ProcessArgs,
-    Settings,
     OutputChannel,
+    ProcessArgs,
+    RecorderState,
+    Settings,
     TranscriptionMsg,
     TTSMsg,
-    RecorderState,
 )
-import time
-from transformers import pipeline
 from iris.gui import UserInterface
-
-from threading import Thread
+from iris.workers import AudioWorker, TTSWorker, VADWorker, WhisperWorker
 
 
 class MainThread(Thread):

@@ -1,13 +1,15 @@
+import threading
 import tkinter as tk
+
+from torch import multiprocessing as mp
+
 from iris.data_types import (
+    OutputChannel,
     ProcessArgs,
     RecorderState,
-    OutputChannel,
     TranscriptionMsg,
     TTSMsg,
 )
-from torch import multiprocessing as mp
-import threading
 
 
 class Subtitle:

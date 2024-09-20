@@ -1,16 +1,12 @@
-import faster_whisper
-import time
 import logging
+import time
 from typing import Optional
 
-from iris.data_types import (
-    TranscriptionMsg,
-    VoiceChunkMsg,
-    ProcessArgs,
-    OutputChannel,
-)
-from iris.workers.base_worker import IRISWorker
+import faster_whisper
 import torch.multiprocessing as mp
+
+from iris.data_types import OutputChannel, ProcessArgs, TranscriptionMsg, VoiceChunkMsg
+from iris.workers.base_worker import IRISWorker
 
 
 class WhisperWorker(IRISWorker):

@@ -1,17 +1,13 @@
-import pyaudio
-import traceback
 import logging
-from iris.data_types import ProcessArgs
-from iris.workers.base_worker import IRISWorker
-import numpy as np
-from iris.data_types import (
-    VoiceChunkMsg,
-    ProcessArgs,
-    OutputChannel,
-    RecorderState,
-)
-import torch
+import traceback
 from collections import deque
+
+import numpy as np
+import pyaudio
+import torch
+
+from iris.data_types import OutputChannel, ProcessArgs, RecorderState, VoiceChunkMsg
+from iris.workers.base_worker import IRISWorker
 
 CHUNK_SECONDS = 5
 
@@ -52,8 +48,6 @@ class AudioWorker(IRISWorker):
         self.first_pause = True
         self.counter = 0
         self.rolling_buffer = deque(maxlen=int(self.frames_per_second / 2))
-
-
 
     def process_stream(self, sound):
         audio_int16 = np.frombuffer(sound, np.int16)
@@ -156,7 +150,6 @@ class AudioWorker(IRISWorker):
             self.rolling_buffer.clear()
         else:
             self.rolling_buffer.append(aud)
-
 
     def _run(self) -> None:
         try:

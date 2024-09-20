@@ -1,10 +1,10 @@
+import time
 from collections import namedtuple
 from dataclasses import dataclass, field
-from typing import Optional, Callable, Any, List
-from torch import multiprocessing as mp
-import time
-
 from enum import Enum
+from typing import Any, Callable, List, Optional
+
+from torch import multiprocessing as mp
 
 
 class RecorderState(Enum):

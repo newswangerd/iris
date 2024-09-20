@@ -1,7 +1,8 @@
-from iris.workers.base_worker import IRISWorker
-from iris.data_types import ProcessArgs, TTSMsg
-from transformers import pipeline
 import sounddevice
+from transformers import pipeline
+
+from iris.data_types import ProcessArgs, TTSMsg
+from iris.workers.base_worker import IRISWorker
 
 TTS_LANG_MAP = {
     "ru": "rus",
