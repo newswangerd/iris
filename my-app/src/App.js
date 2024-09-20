@@ -11,7 +11,7 @@ const AudioStreamingApp = () => {
   const [view, setView] = useState(null);
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
+  const loginUser = () => {
     client
       .me()
       .then((resp) => {
@@ -24,20 +24,25 @@ const AudioStreamingApp = () => {
         });
       })
       .catch((e) => {
-        const auth_code = new URLSearchParams(window.location.search).get(
-          "auth_code",
-        );
-        if (auth_code) {
-          client.code_login({ auth_code });
-          window.history.replaceState(
-            {},
-            document.title,
-            window.location.pathname,
-          );
-        } else {
-          setView("login");
-        }
+        setView("login");
       });
+  };
+
+  useEffect(() => {
+    const auth_code = new URLSearchParams(window.location.search).get(
+      "auth_code",
+    );
+    if (auth_code) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      client.logout().then(() => {
+        client.code_login({ auth_code }).then(() => {
+          loginUser();
+        });
+      });
+    } else {
+      loginUser();
+    }
+
     // return () => null;
   }, []);
 
