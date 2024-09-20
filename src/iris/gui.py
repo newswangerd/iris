@@ -3,8 +3,13 @@ import tkinter as tk
 
 from torch import multiprocessing as mp
 
-from iris.data_types import (OutputChannel, ProcessArgs, RecorderState,
-                             TranscriptionMsg, TTSMsg)
+from iris.data_types import (
+    OutputChannel,
+    ProcessArgs,
+    RecorderState,
+    TranscriptionMsg,
+    TTSMsg,
+)
 
 
 class Subtitle:

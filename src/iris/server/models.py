@@ -1,3 +1,4 @@
+import json
 import os
 import uuid
 from datetime import datetime
@@ -37,12 +38,16 @@ class User(BaseModel):
     secret_key: SecretStr = Field(default_factory=lambda: SecretStr(token_urlsafe(32)))
     password: Optional[SecretStr] = SecretStr(token_urlsafe(32))
 
-    @field_serializer("password", "secret_key", when_used="json")
-    def dump_secret(self, v):
-        return v.get_secret_value()
+    # @field_serializer("password", "secret_key", when_used="json")
+    # def dump_secret(self, v):
+    #     return v.get_secret_value()
 
     def json_internal(self, *args, **kwargs):
-        return super().json(*args, **kwargs)
+        data = self.dict()
+        for k, v in data.items():
+            if isinstance(v, SecretStr):
+                data[k] = v.get_secret_value()
+        return json.dumps(data)
 
     @classmethod
     def all(cls) -> list[Self]:
@@ -60,7 +65,7 @@ class User(BaseModel):
         path = os.path.join(MESSAGE_DIR, "users", self.name, "user_data.json")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w") as f:
-            f.write(self.json())
+            f.write(self.json_internal())
 
 
 class Message(BaseModel):

@@ -5,8 +5,7 @@ from typing import Optional
 import faster_whisper
 import torch.multiprocessing as mp
 
-from iris.data_types import (OutputChannel, ProcessArgs, TranscriptionMsg,
-                             VoiceChunkMsg)
+from iris.data_types import OutputChannel, ProcessArgs, TranscriptionMsg, VoiceChunkMsg
 from iris.workers.base_worker import IRISWorker
 
 
