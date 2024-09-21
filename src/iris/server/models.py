@@ -94,3 +94,36 @@ class Message(BaseModel):
         path = os.path.join(MESSAGE_DIR, "users", self.user, str(self.id) + ".wav")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         audio_segment.export(path, format="wav")
+
+    def save_to_log(self):
+        path = os.path.join(
+            MESSAGE_DIR, "log", datetime.now().strftime("%Y-%m-%d") + ".txt"
+        )
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "a") as f:
+            f.write("\n" + self.json())
+
+    @classmethod
+    def get_last_messages(cls, num_items: int) -> list[Self]:
+        path = os.path.join(
+            MESSAGE_DIR, "log", datetime.now().strftime("%Y-%m-%d") + ".txt"
+        )
+        lines = []
+
+        try:
+            with open(path, "r") as f:
+                lines = f.read().strip("\n").split("\n")
+        except:
+            return []
+
+        if len(lines) >= num_items:
+            export_slice = lines
+        else:
+            export_slice = lines[num_items * -1 :]
+
+        messages = []
+        for msg in export_slice:
+            if msg:
+                messages.append(cls.model_validate_json(msg))
+
+        return messages

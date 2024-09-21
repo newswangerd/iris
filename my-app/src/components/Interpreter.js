@@ -1,7 +1,21 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Mic, MicOff, RotateCw } from "lucide-react";
+import { Mic, MicOff, Fingerprint, RotateCw } from "lucide-react";
 import Message from "./Message";
-import { Button, Center, Spinner, Flex, Box } from "@chakra-ui/react";
+import { Button, Center, Spinner, Flex, Box, Divider } from "@chakra-ui/react";
+
+function waitForSocketConnection(socket, callback) {
+  setTimeout(function () {
+    if (socket.readyState === 1) {
+      console.log("Connection is made");
+      if (callback != null) {
+        callback();
+      }
+    } else {
+      console.log("wait for connection...");
+      waitForSocketConnection(socket, callback);
+    }
+  }, 5); // wait 5 milisecond for the connection...
+}
 
 const Interpreter = ({ client, user }) => {
   const [isRecording, setIsRecording] = useState(false);
@@ -32,6 +46,7 @@ const Interpreter = ({ client, user }) => {
     ws.current.addEventListener("message", (event) => {
       setWaitingForMessage(false);
       const msg = JSON.parse(event.data);
+      console.log(msg);
       if (msg.id) {
         if (msg.user === user.name && msg.is_accepted === null) {
           setCurrentMsg(msg);
@@ -49,10 +64,16 @@ const Interpreter = ({ client, user }) => {
       })
       .catch((err) => console.log(err));
 
-    const wsCurrent = ws.current;
     return () => {
-      wsCurrent.close();
+      ws.current.close();
     };
+  }, []);
+
+  useEffect(() => {
+    client.get_recent_messages().then((resp) => {
+      console.log(resp.data);
+      setSentMsg(resp.data);
+    });
   }, []);
 
   const sayTTS = (message, lang) => {
@@ -156,7 +177,8 @@ const Interpreter = ({ client, user }) => {
         ))}
       </Flex>
 
-      <Box>
+      <Box paddingTop={"20px"}>
+        <Divider />
         <Center>
           <Button
             onMouseDown={startRecording}
@@ -193,6 +215,7 @@ const getButtonIcon = (
   hasAudioPerms,
 ) => {
   if (!hasAudioPerms) {
+    // return <Fingerprint size={40} />;
     return <MicOff size={40} />;
   }
   if (isRecording || waitingForMessage) {
@@ -201,7 +224,14 @@ const getButtonIcon = (
   if (currentMsg) {
     return <RotateCw size={40} />;
   }
-  return <Mic size={40} />;
+  return (
+    <>
+      <Mic size={40} />
+      <Fingerprint size={40} />
+    </>
+  );
+
+  // return <Mic size={40} />;
 };
 
 export default Interpreter;

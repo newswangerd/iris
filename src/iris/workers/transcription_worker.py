@@ -18,7 +18,8 @@ class WhisperWorker(IRISWorker):
             device=self.args.settings.whisper_device,
             compute_type=self.args.settings.compute_type,
             device_index=self.args.settings.gpu_device_index,
-            num_workers=4,
+            cpu_threads=4,
+            # num_workers=4,
         )
 
     def _run(self) -> None:

@@ -20,8 +20,6 @@ const Message = ({ message, acceptMsg, rejectMsg, user, sayTTS }) => {
     paddingRight: "20px",
   };
 
-  console.log(message);
-
   return (
     <Card>
       <Box>
@@ -73,7 +71,9 @@ const TTSOptions = ({ message, sayTTS }) => {
       />
       <MenuList>
         {Object.keys(message.translated_text).map((lang, i) => (
-          <MenuItem onClick={() => sayTTS(message, lang)}>{lang}</MenuItem>
+          <MenuItem key={lang} onClick={() => sayTTS(message, lang)}>
+            {lang}
+          </MenuItem>
         ))}
       </MenuList>
     </Menu>

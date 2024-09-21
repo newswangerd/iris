@@ -15,7 +15,6 @@ const AudioStreamingApp = () => {
     client
       .me()
       .then((resp) => {
-        console.log(resp.data);
         setUser((u) => {
           if (!u) {
             setView("interpreter");

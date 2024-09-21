@@ -13,7 +13,6 @@ import {
   IconButton,
   MenuList,
   MenuItem,
-  Box,
 } from "@chakra-ui/react";
 
 const Nav = ({ setView, user, client }) => {
@@ -38,20 +37,22 @@ const Nav = ({ setView, user, client }) => {
         <MenuItem disabled={true} icon={<CircleUser />}>
           {user.name}
         </MenuItem>
-        <MenuItem
-          icon={<MessageCircleMore />}
-          onClick={() => setView("interpreter")}
-        >
-          Interpeter
-        </MenuItem>
-
         {user.role === "admin" ? (
-          <MenuItem
-            icon={<Settings />}
-            onClick={() => setView("control_panel")}
-          >
-            Control Panel
-          </MenuItem>
+          <>
+            <MenuItem
+              icon={<MessageCircleMore />}
+              onClick={() => setView("interpreter")}
+            >
+              Interpeter
+            </MenuItem>
+
+            <MenuItem
+              icon={<Settings />}
+              onClick={() => setView("control_panel")}
+            >
+              Control Panel
+            </MenuItem>
+          </>
         ) : null}
         <MenuItem icon={<LogOut />} onClick={logout}>
           Logout

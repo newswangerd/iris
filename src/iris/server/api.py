@@ -81,8 +81,8 @@ async def translate_and_send(m: Message):
         )
 
     await translated_broker.send(m.json())
-    print(m)
     m.save_to_file()
+    m.save_to_log()
 
 
 @api.post("/messages/{user}/accept/{id}")
@@ -92,7 +92,6 @@ async def accept_message(
     background_tasks: BackgroundTasks,
     update_text: Optional[CorrectedMessage] = None,
 ):
-    print("got accept")
     m = Message.load_from_file(user, id)
 
     if m.is_accepted:
@@ -107,7 +106,6 @@ async def accept_message(
     background_tasks.add_task(translate_and_send, m)
 
     m.save_to_file()
-    print("finished")
 
 
 @api.post("/messages/{user}/reject/{id}")
@@ -115,11 +113,6 @@ async def reject_message(id: UUID4, user: str):
     m = Message.load_from_file(user, id)
     m.is_accepted = False
     m.save_to_file()
-
-
-@api.put("/messages/{id}")
-async def update_message(message: Message, id: UUID4):
-    message.save_to_file()
 
 
 @api.get("/users")
@@ -149,6 +142,11 @@ async def user_create_token(name: str) -> TokenResp:
     code = secrets.token_urlsafe(32)
     auth_codes[code] = u.name
     return TokenResp(auth_code=code)
+
+
+@api.get("/recent-messages")
+async def get_recent_messages() -> list[Message]:
+    return Message.get_last_messages(10)
 
 
 @api.websocket("/ws-whisper")
@@ -191,15 +189,3 @@ async def whisper(websocket: WebSocket, current_user: User = Depends(get_current
         except:
             translated_broker.remove(id)
             break
-
-
-# @api.websocket("/ws-translation")
-# async def websocket_endpoint(websocket: WebSocket):
-#     await websocket.accept()
-#     id = translated_pub_sub.register(websocket)
-#     while True:
-#         try:
-#             data = await websocket.receive()
-#         except Exception as e:
-#             translated_pub_sub.remove(id)
-#             break

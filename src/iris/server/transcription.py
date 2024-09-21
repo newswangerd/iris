@@ -50,7 +50,8 @@ class Transcribulator:
         )
 
     def translate(self, text: str, lang_key: tuple[str, str]) -> str:
-        return self.translation_models[lang_key](text)[0]["translation_text"]
+        out = self.translation_models[lang_key](text)
+        return " ".join([m["translation_text"] for m in out])
 
     def process_stream(self, buffer):
         audio_io = io.BytesIO(b"".join(buffer))

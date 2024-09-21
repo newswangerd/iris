@@ -43,6 +43,10 @@ class APIClient {
   logout() {
     return axios.post("/auth/logout");
   }
+
+  get_recent_messages() {
+    return axios.get("/api/recent-messages");
+  }
 }
 
 export default APIClient;

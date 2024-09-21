@@ -11,5 +11,7 @@ Web todo:
 - Docker containers
 - reset user secret key
 - error handling on ui
-- Log recent messages to file
 - keep context for speaker
+- allow admin to clear messages
+- create progressive web app
+- fix buggy finger release on phones
