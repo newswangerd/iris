@@ -1,10 +1,10 @@
-from typing import Annotated, Optional
+from typing import  Optional
 
 import jwt
-from fastapi import Cookie, FastAPI, HTTPException, status
-from pydantic import BaseModel
+from fastapi import Depends,  Cookie, HTTPException, status
 
-from iris.server.models import User
+
+from iris.server.models import User, Role
 
 
 def create_token(user: User) -> str:
@@ -35,3 +35,10 @@ async def get_current_user(session_token: Optional[str] = Cookie(None)) -> User:
     except jwt.exceptions.PyJWTError as e:
         raise credentials_exception
     return User(username=username)
+
+
+async def is_admin(current_user: User = Depends(get_current_user)):
+    if current_user.role != Role.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+        )

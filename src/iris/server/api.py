@@ -5,7 +5,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, WebSocket
 from pydantic.types import UUID4
 
 from iris.server import translated_broker, whisper_out_q
-from iris.server.auth import get_current_user
+from iris.server.auth import get_current_user, is_admin
 from iris.server.models import CorrectedMessage, Message, TokenResp, User
 from iris.server.websocket_stream import receive_stream
 
@@ -43,7 +43,7 @@ async def reject_message(id: UUID4, user: str):
     m.save_to_file()
 
 
-@api.get("/users")
+@api.get("/users", dependencies=[Depends(is_admin)])
 async def user_list() -> list[User]:
     return User.all()
 
@@ -53,18 +53,18 @@ async def me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
-@api.post("/users")
+@api.post("/users", dependencies=[Depends(is_admin)])
 async def user_create(user: User) -> User:
     user.save_to_file()
     return user
 
 
-@api.get("/users/{name}")
+@api.get("/users/{name}", dependencies=[Depends(is_admin)])
 async def user_detail(name: str) -> User:
     return User.load_from_file(name)
 
 
-@api.post("/users/{name}/auth-code")
+@api.post("/users/{name}/auth-code", dependencies=[Depends(is_admin)])
 async def user_create_token(name: str) -> TokenResp:
     u = User.load_from_file(name)
     code = secrets.token_urlsafe(32)
