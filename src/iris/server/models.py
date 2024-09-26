@@ -4,10 +4,9 @@ import uuid
 from datetime import datetime
 from enum import Enum
 from secrets import token_urlsafe
-from typing import Optional, Self
+from typing import Any, Optional, Self
 
-from pydantic import BaseModel, Field, SecretStr, field_serializer
-from pydantic.json_schema import SkipJsonSchema
+from pydantic import BaseModel, Field, SecretStr
 from pydantic.types import UUID4
 
 from iris.server import settings
@@ -24,6 +23,11 @@ class Languages(str, Enum):
     SPANISH = "es"
 
 
+class StreamMode(str, Enum):
+    CONVERSATION = "conversation"
+    NORMAL = "normal"
+
+
 MESSAGE_DIR = settings.data_path
 
 
@@ -36,11 +40,7 @@ class User(BaseModel):
     language: str
     role: Role
     secret_key: SecretStr = Field(default_factory=lambda: SecretStr(token_urlsafe(32)))
-    password: Optional[SecretStr] = SecretStr(token_urlsafe(32))
-
-    # @field_serializer("password", "secret_key", when_used="json")
-    # def dump_secret(self, v):
-    #     return v.get_secret_value()
+    password: Optional[SecretStr] = SecretStr("")
 
     def json_internal(self, *args, **kwargs):
         data = self.dict()
@@ -78,6 +78,7 @@ class Message(BaseModel):
     re_recording: Optional[UUID4] = None
     id: UUID4 = Field(default_factory=lambda: uuid.uuid4())
     timestamp: datetime = Field(default_factory=lambda: datetime.now())
+    is_conversation_mode: bool = False
 
     @classmethod
     def load_from_file(cls, user, id):
@@ -127,3 +128,22 @@ class Message(BaseModel):
                 messages.append(cls.model_validate_json(msg))
 
         return messages
+
+
+class CorrectedMessage(BaseModel):
+    corrected_text: str
+
+
+class TokenResp(BaseModel):
+    auth_code: str
+
+
+class StreamMessage(BaseModel):
+    re_recording: Optional[UUID4] = None
+    mode: Optional[StreamMode] = StreamMode.NORMAL
+
+
+class TranscriptionMessage(BaseModel):
+    audio: Any
+    user: User
+    recording_meta: Optional[StreamMessage]

@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
@@ -15,7 +15,9 @@ setup(
         "PyAudio",
         "faster-whisper",
         "pyannote.audio",
-
+        "git+https://github.com/TeamPyOgg/PyOgg",
+        "fastapi",
+        "mutagen"
     ],
     package_dir={'':'src'},
     long_description=long_description,

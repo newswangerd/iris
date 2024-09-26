@@ -1,14 +1,30 @@
+from contextlib import asynccontextmanager
+
 import uvicorn
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from torch import multiprocessing as mp
 
-from iris.server import settings
+from iris.server import audio_in_q, settings, translated_broker, whisper_out_q
 from iris.server.api import api, auth_codes
 from iris.server.auth import create_token
-from iris.server.models import Message, User
+from iris.server.models import User
+from iris.server.workers import BrokerThread, whisper_process
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    BrokerThread(whisper_out_q, translated_broker).start()
+    mp.Process(target=whisper_process, args=[audio_in_q, whisper_out_q]).start()
+    yield
+    audio_in_q.close()
+    whisper_out_q.close()
+
+
+app = FastAPI(
+    lifespan=lifespan,
+)
 
 
 class BasicAuth(BaseModel):
@@ -24,7 +40,10 @@ class AuthCode(BaseModel):
 async def login_basic(response: Response, credentials: BasicAuth):
     print(credentials)
     u = User.load_from_file(credentials.username)
-    if u.password.get_secret_value() == credentials.password:
+    if (
+        u.password.get_secret_value() == credentials.password
+        and u.password.get_secret_value() != ""
+    ):
         response.set_cookie(key="session_token", value=create_token(u))
     else:
         raise HTTPException(status_code=401)
@@ -36,7 +55,6 @@ async def login_auth_code(response: Response, credentials: AuthCode):
         raise HTTPException(status_code=401)
 
     u = User.load_from_file(auth_codes.pop(credentials.auth_code))
-    print(u)
     response.set_cookie(key="session_token", value=create_token(u))
 
 
