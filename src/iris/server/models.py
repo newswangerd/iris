@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from enum import Enum
 from secrets import token_urlsafe
-from typing import Optional, Self
+from typing import Optional, Self, Any
 
 from pydantic import BaseModel, Field, SecretStr, field_serializer
 from pydantic.json_schema import SkipJsonSchema
@@ -22,6 +22,11 @@ class Languages(str, Enum):
     ENGLISH = "en"
     RUSSIAN = "ru"
     SPANISH = "es"
+
+
+class StreamMode(str, Enum):
+    CONVERSATION = "conversation"
+    NORMAL = "normal"
 
 
 MESSAGE_DIR = settings.data_path
@@ -78,6 +83,7 @@ class Message(BaseModel):
     re_recording: Optional[UUID4] = None
     id: UUID4 = Field(default_factory=lambda: uuid.uuid4())
     timestamp: datetime = Field(default_factory=lambda: datetime.now())
+    is_conversation_mode: bool = False
 
     @classmethod
     def load_from_file(cls, user, id):
@@ -127,3 +133,25 @@ class Message(BaseModel):
                 messages.append(cls.model_validate_json(msg))
 
         return messages
+
+
+
+
+class CorrectedMessage(BaseModel):
+    corrected_text: str
+
+
+class TokenResp(BaseModel):
+    auth_code: str
+
+
+class StreamMessage(BaseModel):
+    mimetype: Optional[str] = None
+    re_recording: Optional[UUID4] = None
+    mode: Optional[StreamMode] = StreamMode.NORMAL
+    vad: bool = False
+
+class TranscriptionMessage(BaseModel):
+    audio: Any
+    user: User
+    recording_meta: Optional[StreamMessage]

@@ -15,6 +15,7 @@ setup(
         "PyAudio",
         "faster-whisper",
         "pyannote.audio",
+        "ffmpeg-python",
 
     ],
     package_dir={'':'src'},

@@ -2,6 +2,7 @@ venv/
 pyrightconfig.json
 huggingface.txt
 web_messages/
+aiortc/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,20 +1,34 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Mic, MicOff, Fingerprint, RotateCw } from "lucide-react";
 import Message from "./Message";
-import { Button, Center, Spinner, Flex, Box, Divider } from "@chakra-ui/react";
+import {
+  Button,
+  Center,
+  Spinner,
+  Flex,
+  Box,
+  Divider,
+  FormControl,
+  FormLabel,
+  Switch,
+} from "@chakra-ui/react";
 
-function waitForSocketConnection(socket, callback) {
-  setTimeout(function () {
-    if (socket.readyState === 1) {
-      console.log("Connection is made");
-      if (callback != null) {
-        callback();
-      }
-    } else {
-      console.log("wait for connection...");
-      waitForSocketConnection(socket, callback);
+import Recoder from "opus-recorder";
+
+function findMaxAbsoluteValue(array) {
+  if (!(array instanceof Float32Array) || array.length === 0) {
+    return null;
+  }
+
+  let maxAbs = Math.abs(array[0]);
+  for (let i = 1; i < array.length; i++) {
+    const absValue = Math.abs(array[i]);
+    if (absValue > maxAbs) {
+      maxAbs = absValue;
     }
-  }, 5); // wait 5 milisecond for the connection...
+  }
+
+  return maxAbs;
 }
 
 const Interpreter = ({ client, user }) => {
@@ -27,6 +41,8 @@ const Interpreter = ({ client, user }) => {
   const [waitingForMessage, setWaitingForMessage] = useState(false);
   const [hasAudioPerms, setHasAudioPerms] = useState(false);
   const synth = window.speechSynthesis;
+  const [isConversationMode, setIsConversationMode] = useState(false);
+  const oggRecorder = useRef(null);
 
   useEffect(() => {
     // Initialize WebSocket connection
@@ -43,22 +59,27 @@ const Interpreter = ({ client, user }) => {
 
     ws.current = new WebSocket(whisper_ws);
 
-    ws.current.addEventListener("message", (event) => {
-      setWaitingForMessage(false);
-      const msg = JSON.parse(event.data);
-      console.log(msg);
-      if (msg.id) {
-        if (msg.user === user.name && msg.is_accepted === null) {
-          setCurrentMsg(msg);
-        } else if (msg.user === user.name || msg.language !== user.language) {
-          setSentMsg((oldArray) => [JSON.parse(event.data), ...oldArray]);
-        }
-      }
-    });
-
     navigator.mediaDevices
       .getUserMedia({ audio: true })
       .then((stream) => {
+        const context = new AudioContext();
+        const sourceNode = context.createMediaStreamSource(stream);
+        oggRecorder.current = new Recoder({
+          sourceNode: sourceNode,
+          streamPages: true,
+          encoderSampleRate: 16000,
+          numberOfChannels: 1,
+          encoderFrameSize: 20,
+          maxFramesPerPage: 10,
+        });
+
+        oggRecorder.current.on_start = () => {};
+
+        oggRecorder.current.ondataavailable = (data) => {
+          console.log(data);
+          ws.current.send(data);
+        };
+
         setHasAudioPerms(true);
         setStream(stream);
       })
@@ -68,6 +89,32 @@ const Interpreter = ({ client, user }) => {
       ws.current.close();
     };
   }, []);
+
+  useEffect(() => {
+    const wsEvent = (event) => {
+      console.log(isConversationMode);
+
+      setWaitingForMessage(false);
+      const msg = JSON.parse(event.data);
+      if (msg.id) {
+        console.log(msg.text);
+        if (msg.user === user.name && msg.is_accepted === null) {
+          setCurrentMsg(msg);
+        } else if (msg.user === user.name || msg.language !== user.language) {
+          setSentMsg((oldArray) => [JSON.parse(event.data), ...oldArray]);
+          if (msg.user !== user.name) {
+            console.log(msg.translated_text[user.language]);
+            console.log(isConversationMode);
+            if (msg.translated_text[user.language] && isConversationMode) {
+              sayTTS(msg, user.language);
+            }
+          }
+        }
+      }
+    };
+    ws.current.addEventListener("message", wsEvent);
+    return () => ws.current.removeEventListener("message", wsEvent);
+  }, [isConversationMode, user]);
 
   useEffect(() => {
     client.get_recent_messages().then((resp) => {
@@ -92,54 +139,61 @@ const Interpreter = ({ client, user }) => {
   };
 
   const startRecording = async (e) => {
-    if (waitingForMessage) {
-      return;
+    // if (waitingForMessage) {
+    //   return;
+    // }
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
-    e.preventDefault();
-    e.stopPropagation();
 
     if (!isWebSocketReady(ws.current)) {
       console.error("WebSocket is not ready");
       return;
     }
-    const start_msg = "START:";
 
-    if (currentMsg) {
-      ws.current.send(start_msg + currentMsg.id);
-    } else {
-      ws.current.send(start_msg);
-    }
+    oggRecorder.current.onstart = () => {
+      const start_msg = "START:";
 
-    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs="opus"')
-      ? 'audio/webm;codecs="opus"'
-      : "audio/mp4";
+      const stream_meta = {};
 
-    mediaRecorder.current = new MediaRecorder(stream, {
-      mimeType: mime,
-      audioBitsPerSecond: 16000,
-    });
-    mediaRecorder.current.start(100);
-    mediaRecorder.current.ondataavailable = (event) => {
-      if (event.data.size === 0) return;
-      if (typeof event.data === "undefined") return;
+      if (currentMsg) {
+        stream_meta.re_recording = currentMsg.id;
+      } else if (isConversationMode) {
+        stream_meta.mode = "conversation";
+      } else {
+        stream_meta.mode = "normal";
+      }
 
-      ws.current.send(event.data);
+      ws.current.send(start_msg + JSON.stringify(stream_meta));
     };
+
+    oggRecorder.current.start();
+
     setIsRecording(true);
     setWaitingForMessage(true);
   };
 
-  const stopRecording = (e) => {
-    if (mediaRecorder.current) {
-      mediaRecorder.current.stop();
-
-      mediaRecorder.current.onstop = () => {
-        ws.current.send("STOP");
-        setIsRecording(false);
-      };
+  const stopRecording = (e, cancel = false) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
-    e.preventDefault();
-    e.stopPropagation();
+
+    oggRecorder.current.onstop = () => {
+      setIsRecording(false);
+
+      console.log("stopping");
+      console.log(mediaRecorder.current);
+
+      if (cancel) {
+        ws.current.send("CANCEL:{}");
+      } else {
+        ws.current.send("STOP:{}");
+      }
+    };
+
+    oggRecorder.current.stop();
   };
 
   const acceptMsg = (message) => {
@@ -157,6 +211,18 @@ const Interpreter = ({ client, user }) => {
 
   return (
     <Flex direction={"column"} flex={1}>
+      <Box padding={"20px"}>
+        <FormControl display="flex" alignItems="center">
+          <FormLabel mb="0">Enable conversation mode?</FormLabel>
+          <Switch
+            onChange={(e) => {
+              setIsConversationMode(!isConversationMode);
+            }}
+            isChecked={isConversationMode}
+          />
+        </FormControl>
+      </Box>
+
       <Flex
         flex={"1 1 0"}
         style={{ overflow: "auto" }}

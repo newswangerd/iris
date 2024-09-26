@@ -3,12 +3,31 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from iris.server import settings
+from iris.server import settings, whisper_out_q, translated_broker, audio_in_q
 from iris.server.api import api, auth_codes
 from iris.server.auth import create_token
 from iris.server.models import Message, User
+from contextlib import asynccontextmanager
 
-app = FastAPI()
+from iris.server.workers import BrokerThread, whisper_process
+
+from torch import multiprocessing as mp
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("ANYONE HOME?????????????????????????????????")
+    BrokerThread(whisper_out_q, translated_broker).start()
+    mp.Process(target=whisper_process, args=[audio_in_q, whisper_out_q]).start()
+
+    yield
+    audio_in_q.close()
+    whisper_out_q.close()
+
+
+app = FastAPI(
+    lifespan=lifespan,
+)
 
 
 class BasicAuth(BaseModel):
