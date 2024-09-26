@@ -8,7 +8,7 @@ from typing import Optional
 
 class Settings(BaseModel):
     # TODO remove these temporary values
-    data_path: str = "./web_messages/"
+    data_path: str = "./dev/web_messages/"
     base_language: str = "en"
     supported_languages: list[str] = [
         # "ru",
@@ -16,8 +16,8 @@ class Settings(BaseModel):
     ]
     static_root: str = "./ui/build"
     whisper_model: str = "base"
-    ssl_keyfile: Optional [str] = None
-    ssl_certfile: Optional [str] = None
+    ssl_keyfile: Optional [str] = "./dev/certs/key.pem"
+    ssl_certfile: Optional [str] = "./dev/certs/cert.pem"
     device: str = "cpu"
 
     @classmethod
