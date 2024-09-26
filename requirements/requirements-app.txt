@@ -1,0 +1,11 @@
+transformers
+sentencepiece
+sacremoses
+silero-vad
+fastapi
+mutagen
+silero-vad
+PyAudio
+pyannote.audio
+sounddevice
+git+https://github.com/TeamPyOgg/PyOgg

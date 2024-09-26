@@ -1,29 +1,36 @@
 from uuid import uuid4
-
+import os
 from fastapi import WebSocket
 from pydantic import BaseModel
 from torch import multiprocessing as mp
+from typing import Optional
 
 
 class Settings(BaseModel):
     # TODO remove these temporary values
-    ssl_keyfile: str = "/Users/david/code/iris/key.pem"
-    ssl_certfile: str = "/Users/david/code/iris/cert.pem"
-    data_path: str = "/Users/david/code/iris/web_messages/"
+    data_path: str = "./web_messages/"
     base_language: str = "en"
     supported_languages: list[str] = [
-        "ru",
+        # "ru",
         "es",
     ]
-    static_root: str = "/Users/david/code/iris/my-app/build"
+    static_root: str = "./ui/build"
     whisper_model: str = "base"
+    ssl_keyfile: Optional [str] = None
+    ssl_certfile: Optional [str] = None
+    device: str = "cpu"
 
     @classmethod
     def load(cls):
         """
         Loop through env vars that match the settings
         """
-        pass
+        kwargs = {}
+        for field in cls.model_fields:
+            if val := os.environ.get("IRIS_" + field.upper()):
+                kwargs[field] = val
+
+        return cls(**kwargs)
 
 
 # This is kind of an abomination, but I don't know what else to do. If the websocket isn't
@@ -64,4 +71,4 @@ class MessageBroker:
 translated_broker = MessageBroker()
 audio_in_q = mp.Queue()
 whisper_out_q = mp.Queue()
-settings = Settings()
+settings = Settings.load()

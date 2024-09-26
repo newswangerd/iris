@@ -74,6 +74,7 @@ app.mount(
 )
 
 if __name__ == "__main__":
+    mp.set_start_method("spawn", force=True)
     uvicorn.run(
         "app:app",
         host="0.0.0.0",

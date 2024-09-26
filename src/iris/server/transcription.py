@@ -16,13 +16,13 @@ class Translator:
             self.translation_models[(settings.base_language, lang)] = pipeline(
                 "translation",
                 model=f"Helsinki-NLP/opus-mt-{settings.base_language}-{lang}",
-                device="cpu",
+                device=settings.device,
             )
 
             self.translation_models[(lang, settings.base_language)] = pipeline(
                 "translation",
                 model=f"Helsinki-NLP/opus-mt-{lang}-{settings.base_language}",
-                device="cpu",
+                device=settings.device,
             )
 
     def translate(self, text: str, lang_key: tuple[str, str]) -> str:
@@ -35,7 +35,7 @@ class Transcriber:
         self.whisper = faster_whisper.WhisperModel(
             # model_size_or_path="distil-large-v3",
             model_size_or_path=settings.whisper_model,
-            device="cpu",
+            device=settings.device,
             cpu_threads=4,
             num_workers=2,
             # compute_type="default",

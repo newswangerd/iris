@@ -1,0 +1,4 @@
+venv/
+web_messages/
+ui/node_modules/
+huggingface.txt
