@@ -57,7 +57,10 @@ def whisper_process(audio_in_q: mp.Queue, out_q: mp.Queue):
     print("Transcriber online")
 
     msg: TranscriptionMessage
-    for msg in iter(audio_in_q.get, None):
-        m = transcriber.transcribe(msg)
-        if m:
-            out_q.put(m)
+    try:
+        for msg in iter(audio_in_q.get, None):
+            m = transcriber.transcribe(msg)
+            if m:
+                out_q.put(m)
+    except KeyboardInterrupt:
+        exit()

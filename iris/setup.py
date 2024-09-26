@@ -6,7 +6,7 @@ with open('README.md', encoding='utf-8') as f:
 setup(
     name='iris',
     version='1.0.0',
-    package_dir={'':'src'},
+    package_dir={'':'.'},
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/newswangerd/iris',

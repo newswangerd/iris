@@ -18,8 +18,8 @@ async def lifespan(app: FastAPI):
     BrokerThread(whisper_out_q, translated_broker).start()
     mp.Process(target=whisper_process, args=[audio_in_q, whisper_out_q]).start()
     yield
-    audio_in_q.close()
-    whisper_out_q.close()
+    audio_in_q.put(None)
+    whisper_out_q.put(None)
 
 
 app = FastAPI(
