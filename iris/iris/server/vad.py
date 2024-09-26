@@ -9,6 +9,9 @@ CHUNK_SECONDS = 3
 
 # TODO: I want to refactor audio worker to user this class
 
+VAD_MODEL, _ = torch.hub.load(
+    repo_or_dir="snakers4/silero-vad", model="silero_vad"
+)
 
 class VADHandler:
     def __init__(
@@ -29,9 +32,7 @@ class VADHandler:
         self.on_recording_state_change = on_recording_state_change
         self.on_data_ready = on_data_ready
 
-        self.model, utils = torch.hub.load(
-            repo_or_dir="snakers4/silero-vad", model="silero_vad"
-        )
+        self.model = VAD_MODEL
         self.frames_per_second = int(1000 / 32)
         self.vad_countdown = 0
         self.buffer = []

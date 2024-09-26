@@ -5,12 +5,13 @@
 
 Web todo:
 - allow editing messages
-- remove certs
-- re home UI
-- Docker containers
 - reset user secret key
 - error handling on ui
 - keep context for speaker
 - allow admin to clear messages
 - create progressive web app
 - fix buggy finger release on phones
+- conversations
+- better ui for creating qr codes
+- fix saving audio clips
+- make conversation mode the default?

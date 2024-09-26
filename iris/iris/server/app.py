@@ -38,7 +38,6 @@ class AuthCode(BaseModel):
 
 @app.post("/auth/login")
 async def login_basic(response: Response, credentials: BasicAuth):
-    print(credentials)
     u = User.load_from_file(credentials.username)
     if (
         u.password.get_secret_value() == credentials.password
@@ -78,8 +77,8 @@ if __name__ == "__main__":
     uvicorn.run(
         "app:app",
         host="0.0.0.0",
-        port=8000,
+        port=settings.http_port,
         ssl_keyfile=settings.ssl_keyfile,
         ssl_certfile=settings.ssl_certfile,
-        reload=True,
+        reload=settings.auto_code_reload,
     )

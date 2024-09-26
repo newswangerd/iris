@@ -58,10 +58,7 @@ class User(BaseModel):
 
     @classmethod
     def load_from_file(cls, name):
-        import os
-        print(os.getcwd())
         path = os.path.join(MESSAGE_DIR, "users", name, "user_data.json")
-        print(path)
         return cls.parse_file(path)
 
     def save_to_file(self):

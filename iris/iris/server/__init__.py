@@ -19,6 +19,8 @@ class Settings(BaseModel):
     ssl_keyfile: Optional [str] = "./dev/certs/key.pem"
     ssl_certfile: Optional [str] = "./dev/certs/cert.pem"
     device: str = "cpu"
+    auto_code_reload: bool = True
+    http_port: int = 8000
 
     @classmethod
     def load(cls):
@@ -28,6 +30,12 @@ class Settings(BaseModel):
         kwargs = {}
         for field in cls.model_fields:
             if val := os.environ.get("IRIS_" + field.upper()):
+                if val == "NONE":
+                    val = None
+                elif val == "FALSE":
+                    val = False
+                elif val == "TRUE":
+                    val = True
                 kwargs[field] = val
 
         return cls(**kwargs)
