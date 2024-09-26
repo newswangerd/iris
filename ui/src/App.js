@@ -43,7 +43,7 @@ const AudioStreamingApp = () => {
     }
 
     // return () => null;
-  }, []);
+  }, [view]);
 
   return (
     <ChakraProvider>

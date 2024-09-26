@@ -22,7 +22,9 @@ const Interpreter = ({ client, user }) => {
   const [sentMsg, setSentMsg] = useState([]);
   const [hasAudioPerms, setHasAudioPerms] = useState(false);
   const synth = window.speechSynthesis;
-  const [isConversationMode, setIsConversationMode] = useState(false);
+  const [isConversationMode, setIsConversationMode] = useState(
+    localStorage.getItem("isConversationMode") === "true" ? true : false,
+  );
   const oggRecorder = useRef(null);
 
   useEffect(() => {
@@ -103,6 +105,10 @@ const Interpreter = ({ client, user }) => {
       setSentMsg(resp.data);
     });
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("isConversationMode", String(isConversationMode));
+  }, [isConversationMode]);
 
   const sayTTS = (message, lang) => {
     const utterance = new SpeechSynthesisUtterance(
