@@ -16,8 +16,8 @@ class Settings(BaseModel):
     ]
     static_root: str = "./ui/build"
     whisper_model: str = "base"
-    ssl_keyfile: Optional [str] = "./dev/certs/key.pem"
-    ssl_certfile: Optional [str] = "./dev/certs/cert.pem"
+    ssl_keyfile: Optional[str] = "./dev/certs/key.pem"
+    ssl_certfile: Optional[str] = "./dev/certs/cert.pem"
     device: str = "cpu"
     auto_code_reload: bool = True
     http_port: int = 8000

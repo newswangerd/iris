@@ -1,17 +1,19 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   Box,
   VStack,
   FormControl,
   FormLabel,
   Input,
-  FormErrorMessage,
   Button,
 } from "@chakra-ui/react";
+import { TranslationsContext } from "../context.js";
 
 const Login = ({ client, setView }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  const t = useContext(TranslationsContext);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -29,7 +31,7 @@ const Login = ({ client, setView }) => {
       <form onSubmit={handleSubmit}>
         <VStack spacing={4}>
           <FormControl>
-            <FormLabel htmlFor="username">Username</FormLabel>
+            <FormLabel htmlFor="username">{t("Username")}</FormLabel>
             <Input
               id="username"
               type="text"
@@ -38,7 +40,7 @@ const Login = ({ client, setView }) => {
             />
           </FormControl>
           <FormControl>
-            <FormLabel htmlFor="password">Password</FormLabel>
+            <FormLabel htmlFor="password">{t("Password")}</FormLabel>
             <Input
               id="password"
               type="password"
@@ -46,7 +48,7 @@ const Login = ({ client, setView }) => {
               onChange={(e) => setPassword(e.target.value)}
             />
           </FormControl>
-          <Button type="submit">Login</Button>
+          <Button type="submit">{t("Login")}</Button>
         </VStack>
       </form>
     </Box>

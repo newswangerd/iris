@@ -77,6 +77,11 @@ async def get_recent_messages() -> list[Message]:
     return Message.get_last_messages(10)[::-1]
 
 
+@api.delete("/recent-messages", dependencies=[Depends(is_admin)])
+async def clear_recent_messages():
+    Message.clear_last_messages()
+
+
 @api.websocket("/ws-whisper")
 async def whisper(websocket: WebSocket, current_user: User = Depends(get_current_user)):
     await websocket.accept()

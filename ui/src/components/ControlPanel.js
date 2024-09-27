@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   VStack,
   Box,
@@ -23,6 +23,8 @@ import {
 import { ChevronDown } from "lucide-react";
 import QRCode from "react-qr-code";
 
+import { TranslationsContext } from "../context.js";
+
 const ControlPanel = ({ client }) => {
   const [userList, setUserList] = useState([]);
   const [name, setName] = useState("");
@@ -30,6 +32,8 @@ const ControlPanel = ({ client }) => {
   const [formUpdated, setFormUpdated] = useState(0);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [authUrl, setAuthUrl] = useState(null);
+
+  const t = useContext(TranslationsContext);
 
   useEffect(() => {
     client.user_list().then((resp) => {
@@ -62,7 +66,7 @@ const ControlPanel = ({ client }) => {
       <Box height={"50px"} />
 
       <Box>
-        <h1>Edit User</h1>
+        <h1>{t("Edit User")}</h1>
       </Box>
       <Box>
         <hr />
@@ -74,16 +78,19 @@ const ControlPanel = ({ client }) => {
               {user.name}
             </MenuButton>
             <MenuList>
-              <MenuItem onClick={() => getAuthCode(user)}>QR Code</MenuItem>
-              <MenuItem>Logout</MenuItem>
-              <MenuItem>Delete</MenuItem>
+              <MenuItem onClick={() => getAuthCode(user)}>
+                {" "}
+                {t("QR Code")}
+              </MenuItem>
+              <MenuItem>{t("Logout")}</MenuItem>
+              <MenuItem>{t("Delete")}</MenuItem>
             </MenuList>
           </Menu>
         </Box>
       ))}
       <Box height={"50px"} />
       <Box>
-        <h1>Add User</h1>
+        <h1>{t("Add User")}</h1>
       </Box>
       <Box>
         <hr />
@@ -92,7 +99,7 @@ const ControlPanel = ({ client }) => {
         <form onSubmit={handleSubmit}>
           <VStack spacing={4}>
             <FormControl>
-              <FormLabel htmlFor="name">Name</FormLabel>
+              <FormLabel htmlFor="name">{t("Name")}</FormLabel>
               <Input
                 id="name"
                 value={name}
@@ -101,18 +108,18 @@ const ControlPanel = ({ client }) => {
               />
             </FormControl>
             <FormControl>
-              <FormLabel htmlFor="language">Language</FormLabel>
+              <FormLabel htmlFor="language">{t("Language")}</FormLabel>
               <Select
                 id="language"
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
               >
-                <option value="en">en</option>
-                <option value="ru">ru</option>
-                <option value="es">es</option>
+                <option value="en">{t("English")}</option>
+                <option value="ru">{t("Russian")}</option>
+                <option value="es">{t("Spanish")}</option>
               </Select>
             </FormControl>
-            <Button type="submit">Add User</Button>
+            <Button type="submit">{t("Add User")}</Button>
           </VStack>
         </form>
       </Box>

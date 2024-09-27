@@ -1,15 +1,15 @@
 from contextlib import asynccontextmanager
-
 import uvicorn
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from torch import multiprocessing as mp
+from datetime import datetime, timedelta, timezone
 
 from iris.server import audio_in_q, settings, translated_broker, whisper_out_q
 from iris.server.api import api, auth_codes
 from iris.server.auth import create_token
-from iris.server.models import User
+from iris.server.models import User, Languages, I18NConfig
 from iris.server.workers import BrokerThread, whisper_process
 
 
@@ -36,6 +36,14 @@ class AuthCode(BaseModel):
     auth_code: str
 
 
+def create_session(response, user):
+    return response.set_cookie(
+        key="session_token",
+        value=create_token(user),
+        expires=datetime.now(timezone.utc) + timedelta(days=14),
+    )
+
+
 @app.post("/auth/login")
 async def login_basic(response: Response, credentials: BasicAuth):
     u = User.load_from_file(credentials.username)
@@ -43,7 +51,7 @@ async def login_basic(response: Response, credentials: BasicAuth):
         u.password.get_secret_value() == credentials.password
         and u.password.get_secret_value() != ""
     ):
-        response.set_cookie(key="session_token", value=create_token(u))
+        return create_session(response, u)
     else:
         raise HTTPException(status_code=401)
 
@@ -54,12 +62,19 @@ async def login_auth_code(response: Response, credentials: AuthCode):
         raise HTTPException(status_code=401)
 
     u = User.load_from_file(auth_codes.pop(credentials.auth_code))
-    response.set_cookie(key="session_token", value=create_token(u))
+    return create_session(response, u)
 
 
 @app.post("/auth/logout")
 async def logout(response: Response):
     response.delete_cookie("session_token")
+
+@app.get("/translations/{language}")
+async def get_translations(language) -> I18NConfig:
+    if language in settings.supported_languages or language == settings.base_language:
+        return I18NConfig.load_language(language)
+
+    raise HTTPException(status_code=400, detail="Language not supported")
 
 
 app.mount(

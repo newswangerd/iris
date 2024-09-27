@@ -47,6 +47,10 @@ class APIClient {
   get_recent_messages() {
     return axios.get("/api/recent-messages");
   }
+
+  get_translations(language) {
+    return axios.get(`/translations/${language}`);
+  }
 }
 
 export default APIClient;

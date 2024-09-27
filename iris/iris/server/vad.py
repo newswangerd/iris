@@ -4,14 +4,13 @@ from typing import Callable, Optional
 import numpy as np
 import torch
 
-CHUNK_SECONDS = 3
+CHUNK_SECONDS = 2
 
 
 # TODO: I want to refactor audio worker to user this class
 
-VAD_MODEL, _ = torch.hub.load(
-    repo_or_dir="snakers4/silero-vad", model="silero_vad"
-)
+VAD_MODEL, _ = torch.hub.load(repo_or_dir="snakers4/silero-vad", model="silero_vad")
+
 
 class VADHandler:
     def __init__(

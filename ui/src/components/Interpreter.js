@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Mic, MicOff, Fingerprint, RotateCw } from "lucide-react";
+import React, { useState, useRef, useEffect, useContext } from "react";
+import { Mic, MicOff, RotateCw } from "lucide-react";
 import Message from "./Message";
 import {
   Button,
@@ -12,10 +12,12 @@ import {
   FormLabel,
   Switch,
 } from "@chakra-ui/react";
+import { UserContext, TranslationsContext } from "../context.js";
+import InstructionModal from "./InstructionModal";
 
 import Recoder from "opus-recorder";
 
-const Interpreter = ({ client, user }) => {
+const Interpreter = ({ client, showInstructions }) => {
   const [isRecording, setIsRecording] = useState(false);
   const ws = useRef(null);
   const [currentMsg, setCurrentMsg] = useState(null);
@@ -26,6 +28,9 @@ const Interpreter = ({ client, user }) => {
     localStorage.getItem("isConversationMode") === "true" ? true : false,
   );
   const oggRecorder = useRef(null);
+
+  const user = useContext(UserContext);
+  const t = useContext(TranslationsContext);
 
   useEffect(() => {
     // Initialize WebSocket connection
@@ -193,6 +198,7 @@ const Interpreter = ({ client, user }) => {
 
   return (
     <Flex direction={"column"} flex={1}>
+      <InstructionModal showOnLoad={showInstructions} />
       <Flex
         flex={"1 1 0"}
         style={{ overflow: "auto" }}
@@ -213,7 +219,7 @@ const Interpreter = ({ client, user }) => {
         ))}
         <Box key={-2} padding={"20px"}>
           <FormControl display="flex" alignItems="center">
-            <FormLabel mb="0">Enable conversation mode?</FormLabel>
+            <FormLabel mb="0">{t("Enable conversation mode?")}</FormLabel>
             <Switch
               onChange={(e) => {
                 setIsConversationMode(!isConversationMode);

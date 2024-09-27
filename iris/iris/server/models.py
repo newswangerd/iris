@@ -8,8 +8,13 @@ from typing import Any, Optional, Self
 
 from pydantic import BaseModel, Field, SecretStr
 from pydantic.types import UUID4
+from collections import OrderedDict
 
 from iris.server import settings
+from iris.server.i18n import I18NMessages
+
+from transformers import pipeline
+from transformers.models.speech_to_text.tokenization_speech_to_text import LANGUAGES
 
 
 class Role(str, Enum):
@@ -129,6 +134,13 @@ class Message(BaseModel):
 
         return messages
 
+    @staticmethod
+    def clear_last_messages():
+        path = os.path.join(
+            MESSAGE_DIR, "log", datetime.now().strftime("%Y-%m-%d") + ".txt"
+        )
+        os.remove(path)
+
 
 class CorrectedMessage(BaseModel):
     corrected_text: str
@@ -147,3 +159,58 @@ class TranscriptionMessage(BaseModel):
     audio: Any
     user: User
     recording_meta: Optional[StreamMessage]
+
+
+class I18NConfig(BaseModel):
+    language: Languages
+    messages: OrderedDict
+    last_update_hash: str
+
+    @classmethod
+    def load_language(cls, language):
+        path = os.path.join(
+            MESSAGE_DIR, "i18n", language + ".json"
+        )
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
+        try:
+            data = cls.parse_file(path)
+            if data.last_update_hash != I18NMessages.get_hash():
+                return cls.init_lang(language)
+            else:
+                return data
+        except:
+            return cls.init_lang(language)
+
+    @classmethod
+    def init_lang(cls, language):
+        message_dict = OrderedDict()
+        if language != Languages.ENGLISH:
+            translation_model = pipeline(
+                "translation",
+                model=f"Helsinki-NLP/opus-mt-en-{language}",
+                device=settings.device,
+            )
+
+
+            for k in I18NMessages.messages:
+                out = translation_model(k)
+                message_dict[k] = " ".join([m["translation_text"] for m in out])
+        else:
+            for k in I18NMessages.messages:
+                message_dict[k] = k
+
+
+        messages = cls(language=language, last_update_hash=I18NMessages.get_hash(), messages=message_dict)
+        messages.save_to_file()
+        return messages
+
+
+    def save_to_file(self):
+        path = os.path.join(
+            MESSAGE_DIR, "i18n", self.language + ".json"
+        )
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
+        with open(path, "w") as f:
+            f.write(self.json())

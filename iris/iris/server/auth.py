@@ -1,7 +1,7 @@
-from typing import  Optional
+from typing import Optional
 
 import jwt
-from fastapi import Depends,  Cookie, HTTPException, status
+from fastapi import Depends, Cookie, HTTPException, status
 
 
 from iris.server.models import User, Role

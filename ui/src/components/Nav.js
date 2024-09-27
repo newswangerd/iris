@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import {
   SquareMenu,
   CircleUser,
@@ -15,7 +15,12 @@ import {
   MenuItem,
 } from "@chakra-ui/react";
 
-const Nav = ({ setView, user, client }) => {
+import { UserContext, TranslationsContext } from "../context.js";
+
+const Nav = ({ setView, client }) => {
+  const user = useContext(UserContext);
+  const t = useContext(TranslationsContext);
+
   if (!user) {
     return null;
   }
@@ -43,19 +48,19 @@ const Nav = ({ setView, user, client }) => {
               icon={<MessageCircleMore />}
               onClick={() => setView("interpreter")}
             >
-              Interpeter
+              {t("Interpeter")}
             </MenuItem>
 
             <MenuItem
               icon={<Settings />}
               onClick={() => setView("control_panel")}
             >
-              Control Panel
+              {t("Control Panel")}
             </MenuItem>
           </>
         ) : null}
         <MenuItem icon={<LogOut />} onClick={logout}>
-          Logout
+          {t("Logout")}
         </MenuItem>
       </MenuList>
     </Menu>
