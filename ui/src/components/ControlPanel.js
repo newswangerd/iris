@@ -129,6 +129,8 @@ const ControlPanel = ({ client }) => {
           <ModalContent>
             <ModalCloseButton />
             <ModalBody>
+              {authUrl}
+
               <Center padding={"20px"}>
                 {authUrl ? <QRCode size={256} value={authUrl} /> : null}
               </Center>

@@ -27,7 +27,11 @@ class I18NMessages:
         "Your message will be translated and sent to me.",
         "Instructions",
         "Your translated message.",
-        "Interpreter"
+        "Interpreter",
+        "Clear messages",
+        "Create QR Code",
+        "Close",
+        "Clear"
     ]
 
 

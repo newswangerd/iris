@@ -6,10 +6,7 @@
 Web todo:
 before trip
 - fix buggy finger release on phones
-- make conversation mode the default?
-- i18n
-- allow admin to clear messages
-
+- make microphone not record constantly
 
 - better ui for creating qr codes
 - allow editing messages

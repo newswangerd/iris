@@ -1,36 +1,24 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect } from "react";
 import {
-  VStack,
-  Box,
-  Menu,
   Button,
-  MenuItem,
-  MenuButton,
-  MenuList,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
   Modal,
   ModalBody,
   ModalFooter,
   ModalOverlay,
   ModalContent,
   ModalCloseButton,
-  Center,
   useDisclosure,
   ModalHeader,
   OrderedList,
   ListItem,
 } from "@chakra-ui/react";
-import { ChevronDown } from "lucide-react";
 
-import { UserContext, TranslationsContext } from "../context.js";
+import { TranslationsContext } from "../context.js";
 
 import InstructionAnimation from "./InstructionAnimation.js";
 
 const InstructionModal = ({ showOnLoad }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure({});
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const t = useContext(TranslationsContext);
 
   useEffect(() => {

@@ -22,9 +22,7 @@ const AudioStreamingApp = () => {
       .then((resp) => {
         setUser((u) => {
           setUserAuthed(true);
-          if (!u) {
-            setView("interpreter");
-          }
+          setView("interpreter");
           return resp.data;
         });
       })
@@ -46,7 +44,7 @@ const AudioStreamingApp = () => {
         setTranslations(resp.data);
       });
     }
-  }, [user]);
+  }, [user, userAuthed]);
 
   useEffect(() => {
     const auth_code = new URLSearchParams(window.location.search).get(
@@ -66,7 +64,7 @@ const AudioStreamingApp = () => {
     }
 
     // return () => null;
-  }, [view]);
+  }, []);
 
   const getTranslation = (msg) => {
     if (!translations) {

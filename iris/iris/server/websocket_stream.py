@@ -89,7 +89,6 @@ async def receive_stream(websocket: WebSocket, user: User):
 
     while True:
         data = await websocket.receive()
-        websocket.state
 
         if "text" in data:
             action, stream_meta = data["text"].split(":", maxsplit=1)

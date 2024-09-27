@@ -1,18 +1,8 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
 import { Mic, MicOff, RotateCw } from "lucide-react";
 import Message from "./Message";
-import {
-  Button,
-  Center,
-  Spinner,
-  Flex,
-  Box,
-  Divider,
-  FormControl,
-  FormLabel,
-  Switch,
-} from "@chakra-ui/react";
-import { UserContext, TranslationsContext } from "../context.js";
+import { Button, Center, Spinner, Flex, Box, Divider } from "@chakra-ui/react";
+import { UserContext } from "../context.js";
 import InstructionModal from "./InstructionModal";
 
 import Recoder from "opus-recorder";
@@ -24,13 +14,13 @@ const Interpreter = ({ client, showInstructions }) => {
   const [sentMsg, setSentMsg] = useState([]);
   const [hasAudioPerms, setHasAudioPerms] = useState(false);
   const synth = window.speechSynthesis;
-  const [isConversationMode, setIsConversationMode] = useState(
-    localStorage.getItem("isConversationMode") === "true" ? true : false,
-  );
+  // const [isConversationMode, setIsConversationMode] = useState(
+  //   localStorage.getItem("isConversationMode") === "true" ? true : false,
+  // );
+  const [isConversationMode, setIsConversationMode] = useState(true);
   const oggRecorder = useRef(null);
 
   const user = useContext(UserContext);
-  const t = useContext(TranslationsContext);
 
   useEffect(() => {
     // Initialize WebSocket connection
@@ -93,9 +83,9 @@ const Interpreter = ({ client, showInstructions }) => {
           if (msg.user !== user.name) {
             console.log(msg.translated_text[user.language]);
             console.log(isConversationMode);
-            if (msg.translated_text[user.language] && isConversationMode) {
-              sayTTS(msg, user.language);
-            }
+            // if (msg.translated_text[user.language] && isConversationMode) {
+            //   sayTTS(msg, user.language);
+            // }
           }
         }
       }
@@ -217,17 +207,6 @@ const Interpreter = ({ client, showInstructions }) => {
         {sentMsg.map((msg, k) => (
           <Message sayTTS={sayTTS} user={user} key={k} message={msg} />
         ))}
-        <Box key={-2} padding={"20px"}>
-          <FormControl display="flex" alignItems="center">
-            <FormLabel mb="0">{t("Enable conversation mode?")}</FormLabel>
-            <Switch
-              onChange={(e) => {
-                setIsConversationMode(!isConversationMode);
-              }}
-              isChecked={isConversationMode}
-            />
-          </FormControl>
-        </Box>
       </Flex>
 
       <Box paddingTop={"20px"}>
@@ -274,5 +253,18 @@ const getButtonIcon = (currentMsg, isRecording, hasAudioPerms) => {
 
   // return <Mic size={40} />;
 };
+
+// conversation mode toggle
+// <Box key={-2} padding={"20px"}>
+//   <FormControl display="flex" alignItems="center">
+//     <FormLabel mb="0">{t("Enable conversation mode?")}</FormLabel>
+//     <Switch
+//       onChange={(e) => {
+//         setIsConversationMode(!isConversationMode);
+//       }}
+//       isChecked={isConversationMode}
+//     />
+//   </FormControl>
+// </Box>
 
 export default Interpreter;

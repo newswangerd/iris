@@ -139,7 +139,10 @@ class Message(BaseModel):
         path = os.path.join(
             MESSAGE_DIR, "log", datetime.now().strftime("%Y-%m-%d") + ".txt"
         )
-        os.remove(path)
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            return
 
 
 class CorrectedMessage(BaseModel):

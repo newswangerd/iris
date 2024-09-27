@@ -48,6 +48,10 @@ class APIClient {
     return axios.get("/api/recent-messages");
   }
 
+  clear_recent_messages() {
+    return axios.delete("/api/recent-messages");
+  }
+
   get_translations(language) {
     return axios.get(`/translations/${language}`);
   }
