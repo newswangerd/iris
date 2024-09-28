@@ -18,9 +18,29 @@ const Interpreter = ({ client, showInstructions }) => {
   //   localStorage.getItem("isConversationMode") === "true" ? true : false,
   // );
   const [isConversationMode, setIsConversationMode] = useState(true);
+
   const oggRecorder = useRef(null);
 
   const user = useContext(UserContext);
+
+  const wsEvent = (event) => {
+    const msg = JSON.parse(event.data);
+    if (msg.id) {
+      if (msg.user === user.name && msg.is_accepted === null) {
+        setCurrentMsg(msg);
+      } else if (
+        msg.is_accepted &&
+        (msg.user === user.name || msg.language !== user.language)
+      ) {
+        setSentMsg((oldArray) => [JSON.parse(event.data), ...oldArray]);
+        if (msg.user !== user.name) {
+          // if (msg.translated_text[user.language] && isConversationMode) {
+          //   sayTTS(msg, user.language);
+          // }
+        }
+      }
+    }
+  };
 
   const connectWS = () => {
     if (!ws.current || ws.current.readyState === WebSocket.CLOSED) {
@@ -37,78 +57,60 @@ const Interpreter = ({ client, showInstructions }) => {
       const whisper_ws = new_uri + "/api/ws-whisper";
 
       ws.current = new WebSocket(whisper_ws);
+      ws.current.addEventListener("message", wsEvent);
     }
   };
 
   useEffect(() => {
     connectWS();
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then((stream) => {
-        const context = new AudioContext();
-        const sourceNode = context.createMediaStreamSource(stream);
-        oggRecorder.current = new Recoder({
-          sourceNode: sourceNode,
-          streamPages: true,
-          encoderSampleRate: 16000,
-          numberOfChannels: 1,
-          encoderFrameSize: 20,
-          maxFramesPerPage: 10,
-        });
 
-        oggRecorder.current.on_start = () => {};
+    if (
+      (oggRecorder.current &&
+        oggRecorder.current.audioContext.state !== "running") ||
+      !oggRecorder.current
+    ) {
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then((stream) => {
+          const context = new AudioContext();
+          const sourceNode = context.createMediaStreamSource(stream);
+          oggRecorder.current = new Recoder({
+            sourceNode: sourceNode,
+            streamPages: true,
+            encoderSampleRate: 16000,
+            numberOfChannels: 1,
+            encoderFrameSize: 20,
+            maxFramesPerPage: 10,
+          });
 
-        oggRecorder.current.ondataavailable = (data) => {
-          ws.current.send(data);
-        };
+          oggRecorder.current.on_start = () => {};
 
-        setHasAudioPerms(true);
-      })
-      .catch((err) => console.log(err));
+          oggRecorder.current.ondataavailable = (data) => {
+            ws.current.send(data);
+          };
+
+          setHasAudioPerms(true);
+        })
+        .catch((err) => console.log(err));
+    }
+
+    client.get_recent_messages().then((resp) => {
+      setSentMsg(resp.data);
+    });
 
     return () => {
-      ws.current.close();
+      if (ws.current.readyState === WebSocket.OPEN) ws.current.close();
     };
   }, []);
 
   useEffect(() => {
-    const wsEvent = (event) => {
-      console.log(isConversationMode);
-
-      const msg = JSON.parse(event.data);
-      if (msg.id) {
-        console.log(msg.text);
-        if (msg.user === user.name && msg.is_accepted === null) {
-          setCurrentMsg(msg);
-        } else if (
-          msg.is_accepted &&
-          (msg.user === user.name || msg.language !== user.language)
-        ) {
-          setSentMsg((oldArray) => [JSON.parse(event.data), ...oldArray]);
-          if (msg.user !== user.name) {
-            console.log(msg.translated_text[user.language]);
-            console.log(isConversationMode);
-            // if (msg.translated_text[user.language] && isConversationMode) {
-            //   sayTTS(msg, user.language);
-            // }
-          }
-        }
-      }
-    };
     ws.current.addEventListener("message", wsEvent);
     return () => ws.current.removeEventListener("message", wsEvent);
   }, [isConversationMode, user]);
 
-  useEffect(() => {
-    client.get_recent_messages().then((resp) => {
-      console.log(resp.data);
-      setSentMsg(resp.data);
-    });
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("isConversationMode", String(isConversationMode));
-  }, [isConversationMode]);
+  // useEffect(() => {
+  //   localStorage.setItem("isConversationMode", String(isConversationMode));
+  // }, [isConversationMode]);
 
   const sayTTS = (message, lang) => {
     const utterance = new SpeechSynthesisUtterance(
@@ -124,8 +126,11 @@ const Interpreter = ({ client, showInstructions }) => {
       e.stopPropagation();
     }
 
+    if (isRecording) return;
+    if (oggRecorder.current.state === "loading") return;
+
     if (ws.current.readyState !== WebSocket.OPEN) {
-      connectWS();
+      window.location.reload();
       return;
     }
 
@@ -157,6 +162,8 @@ const Interpreter = ({ client, showInstructions }) => {
       e.preventDefault();
       e.stopPropagation();
     }
+
+    if (!isRecording) return;
 
     oggRecorder.current.onstop = () => {
       setIsRecording(false);
