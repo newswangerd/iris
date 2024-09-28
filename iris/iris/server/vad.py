@@ -39,6 +39,7 @@ class VADHandler:
         self.counter = 0
         self.rolling_buffer = deque(maxlen=int(self.frames_per_second / 2))
         self.recording = False
+        self.vad_during_buffer = False
 
     def process_stream(self, sound):
         audio_int16 = np.frombuffer(sound, np.int16)
@@ -51,8 +52,9 @@ class VADHandler:
 
     def send_audio(self):
         print("sending audio")
-        if self.on_data_ready:
+        if self.on_data_ready and self.vad_during_buffer:
             self.on_data_ready(self.get_whisper_audio())
+        self.vad_during_buffer = False
         self.buffer.clear()
         self.rolling_buffer.clear()
 
@@ -74,6 +76,7 @@ class VADHandler:
             vad = self.model(torch.from_numpy(self.process_stream(aud)), 16000).item()
 
         if (vad >= self.vad_threshold and not self.recording) or vad >= 0.8:
+            self.vad_during_buffer = True
             over_time = len(self.buffer) / self.frames_per_second
             if over_time >= CHUNK_SECONDS + 1:
                 diff = over_time - CHUNK_SECONDS

@@ -11,7 +11,7 @@ class Settings(BaseModel):
     data_path: str = "./dev/web_messages/"
     base_language: str = "en"
     supported_languages: list[str] = [
-        # "ru",
+        "ru",
         "es",
     ]
     static_root: str = "./ui/build"

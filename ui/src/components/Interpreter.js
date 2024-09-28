@@ -22,21 +22,26 @@ const Interpreter = ({ client, showInstructions }) => {
 
   const user = useContext(UserContext);
 
-  useEffect(() => {
-    // Initialize WebSocket connection
-    var loc = window.location,
-      new_uri;
-    if (loc.protocol === "https:") {
-      new_uri = "wss:";
-    } else {
-      new_uri = "ws:";
+  const connectWS = () => {
+    if (!ws.current || ws.current.readyState === WebSocket.CLOSED) {
+      // Initialize WebSocket connection
+      var loc = window.location,
+        new_uri;
+      if (loc.protocol === "https:") {
+        new_uri = "wss:";
+      } else {
+        new_uri = "ws:";
+      }
+      new_uri += "//" + loc.host;
+
+      const whisper_ws = new_uri + "/api/ws-whisper";
+
+      ws.current = new WebSocket(whisper_ws);
     }
-    new_uri += "//" + loc.host;
+  };
 
-    const whisper_ws = new_uri + "/api/ws-whisper";
-
-    ws.current = new WebSocket(whisper_ws);
-
+  useEffect(() => {
+    connectWS();
     navigator.mediaDevices
       .getUserMedia({ audio: true })
       .then((stream) => {
@@ -113,21 +118,14 @@ const Interpreter = ({ client, showInstructions }) => {
     synth.speak(utterance);
   };
 
-  const isWebSocketReady = (ws) => {
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-      return false;
-    }
-    return true;
-  };
-
   const startRecording = async (e) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
 
-    if (!isWebSocketReady(ws.current)) {
-      console.error("WebSocket is not ready");
+    if (ws.current.readyState !== WebSocket.OPEN) {
+      connectWS();
       return;
     }
 
