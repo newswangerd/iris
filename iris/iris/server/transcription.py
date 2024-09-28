@@ -81,5 +81,5 @@ class Transcriber:
         print(m)
 
         m.save_to_file()
-        # m.save_audio(audio_segment)
+        m.save_audio(msg.audio)
         return m

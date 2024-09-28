@@ -10,7 +10,6 @@ import Recoder from "opus-recorder";
 const Interpreter = ({ client, showInstructions }) => {
   const [isRecording, setIsRecording] = useState(false);
   const ws = useRef(null);
-  const [currentMsg, setCurrentMsg] = useState(null);
   const [sentMsg, setSentMsg] = useState([]);
   const [hasAudioPerms, setHasAudioPerms] = useState(false);
   const synth = window.speechSynthesis;
@@ -26,9 +25,7 @@ const Interpreter = ({ client, showInstructions }) => {
   const wsEvent = (event) => {
     const msg = JSON.parse(event.data);
     if (msg.id) {
-      if (msg.user === user.name && msg.is_accepted === null) {
-        setCurrentMsg(msg);
-      } else if (
+      if (
         msg.is_accepted &&
         (msg.user === user.name || msg.language !== user.language)
       ) {
@@ -139,10 +136,6 @@ const Interpreter = ({ client, showInstructions }) => {
 
       const stream_meta = {};
 
-      if (currentMsg) {
-        stream_meta.re_recording = currentMsg.id;
-      }
-
       if (isConversationMode) {
         stream_meta.mode = "conversation";
       } else {
@@ -178,17 +171,10 @@ const Interpreter = ({ client, showInstructions }) => {
     oggRecorder.current.stop();
   };
 
-  const acceptMsg = (message) => {
-    message.is_accepted = true;
-    setCurrentMsg(null);
-    // setSentMsg((oldArray) => [message, ...oldArray]);
-    client.accept_message(message).then(() => {});
-  };
-
-  const rejectMsg = (message) => {
-    message.is_accepted = false;
-    setCurrentMsg(null);
-    client.reject_message(message).then(() => {});
+  const acceptMsg = (message, modifiedText) => {
+    console.log(message);
+    console.log(modifiedText);
+    client.accept_message(message, modifiedText).then(() => {});
   };
 
   return (
@@ -199,18 +185,14 @@ const Interpreter = ({ client, showInstructions }) => {
         style={{ overflow: "auto" }}
         flexDirection={"column-reverse"}
       >
-        {currentMsg ? (
-          <Message
-            key={-1}
-            rejectMsg={() => rejectMsg(currentMsg)}
-            acceptMsg={() => acceptMsg(currentMsg)}
-            message={currentMsg}
-            user={user}
-            sayTTS={sayTTS}
-          />
-        ) : null}
         {sentMsg.map((msg, k) => (
-          <Message sayTTS={sayTTS} user={user} key={k} message={msg} />
+          <Message
+            acceptMsg={acceptMsg}
+            sayTTS={sayTTS}
+            user={user}
+            key={k}
+            message={msg}
+          />
         ))}
       </Flex>
 
@@ -231,7 +213,7 @@ const Interpreter = ({ client, showInstructions }) => {
             height={"125px"}
             width={"100%"}
           >
-            {getButtonIcon(currentMsg, isRecording, hasAudioPerms)}
+            {getButtonIcon(isRecording, hasAudioPerms)}
           </Button>
         </Center>
       </Box>
@@ -239,7 +221,7 @@ const Interpreter = ({ client, showInstructions }) => {
   );
 };
 
-const getButtonIcon = (currentMsg, isRecording, hasAudioPerms) => {
+const getButtonIcon = (isRecording, hasAudioPerms) => {
   if (!hasAudioPerms) {
     // return <Fingerprint size={40} />;
     return <MicOff size={40} />;
@@ -247,29 +229,12 @@ const getButtonIcon = (currentMsg, isRecording, hasAudioPerms) => {
   if (isRecording) {
     return <Spinner />;
   }
-  if (currentMsg) {
-    return <RotateCw size={40} />;
-  }
+
   return (
     <>
       <Mic size={40} />
     </>
   );
-
-  // return <Mic size={40} />;
 };
-
-// conversation mode toggle
-// <Box key={-2} padding={"20px"}>
-//   <FormControl display="flex" alignItems="center">
-//     <FormLabel mb="0">{t("Enable conversation mode?")}</FormLabel>
-//     <Switch
-//       onChange={(e) => {
-//         setIsConversationMode(!isConversationMode);
-//       }}
-//       isChecked={isConversationMode}
-//     />
-//   </FormControl>
-// </Box>
 
 export default Interpreter;

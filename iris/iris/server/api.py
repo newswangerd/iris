@@ -14,32 +14,19 @@ auth_codes: dict[str, str] = {}
 
 
 @api.post("/messages/{user}/accept/{id}")
-async def accept_message(
+async def correct_message(
     id: UUID4,
     user: str,
     background_tasks: BackgroundTasks,
-    update_text: Optional[CorrectedMessage] = None,
+    update_text: CorrectedMessage,
 ):
     m = Message.load_from_file(user, id)
-
-    if m.is_accepted:
-        return
-
-    m.is_accepted = True
-
-    if update_text:
+    if not m.original_text:
         m.original_text = m.text
-        m.text = update_text.corrected_text
+    m.text = update_text.corrected_text
 
     whisper_out_q.put(m)
 
-    m.save_to_file()
-
-
-@api.post("/messages/{user}/reject/{id}")
-async def reject_message(id: UUID4, user: str):
-    m = Message.load_from_file(user, id)
-    m.is_accepted = False
     m.save_to_file()
 
 

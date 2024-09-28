@@ -6,10 +6,9 @@ class APIClient {
   }
 
   accept_message(message, update_text) {
-    return axios.post(
-      `/api/messages/${message.user}/accept/${message.id}`,
-      update_text,
-    );
+    return axios.post(`/api/messages/${message.user}/accept/${message.id}`, {
+      corrected_text: update_text,
+    });
   }
 
   reject_message(message) {

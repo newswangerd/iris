@@ -5,6 +5,8 @@ from datetime import datetime
 from enum import Enum
 from secrets import token_urlsafe
 from typing import Any, Optional, Self
+import wave
+import numpy as np
 
 from pydantic import BaseModel, Field, SecretStr
 from pydantic.types import UUID4
@@ -96,10 +98,18 @@ class Message(BaseModel):
         with open(path, "w") as f:
             f.write(self.json())
 
-    def save_audio(self, audio_segment):
+    def save_audio(self, audio):
         path = os.path.join(MESSAGE_DIR, "users", self.user, str(self.id) + ".wav")
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        audio_segment.export(path, format="wav")
+        with wave.open(path, 'w') as wav_file:
+            # Define audio parameters
+            audio = np.int16(audio * 32767)
+            wav_file.setnchannels(1) # Mono
+            wav_file.setsampwidth(2) # Two bytes per sample
+            wav_file.setframerate(16000)
+
+            # Convert the NumPy array to bytes and write it to the WAV file
+            wav_file.writeframes(audio.tobytes())
 
     def save_to_log(self):
         path = os.path.join(

@@ -19,16 +19,6 @@ SAMPLES_PER_MS = int(SAMPLE_RATE / 1000)
 BYTES_PER_SILERO_FRAME = SAMPLES_PER_MS * 32 * 2
 
 
-def process_stream(sound):
-    audio_int16 = np.frombuffer(sound, np.int16)
-    abs_max = np.abs(audio_int16).max()
-    sound = audio_int16.astype(np.float32)
-    if abs_max > 0:
-        sound *= 1 / 32768
-    sound = sound.squeeze()
-    return sound
-
-
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):

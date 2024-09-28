@@ -31,7 +31,8 @@ class I18NMessages:
         "Clear messages",
         "Create QR Code",
         "Close",
-        "Clear"
+        "Clear",
+        "edited"
     ]
 
 
