@@ -3,6 +3,7 @@ import hashlib
 import json
 from functools import lru_cache
 
+
 class I18NMessages:
     messages = [
         "Edit User",
@@ -32,14 +33,13 @@ class I18NMessages:
         "Create QR Code",
         "Close",
         "Clear",
-        "edited"
+        "edited",
     ]
-
 
     @classmethod
     @lru_cache
     def get_hash(cls):
         json_string = json.dumps(cls.messages)
         sha1_hash = hashlib.sha1()
-        sha1_hash.update(json_string.encode('utf-8'))
+        sha1_hash.update(json_string.encode("utf-8"))
         return sha1_hash.hexdigest()

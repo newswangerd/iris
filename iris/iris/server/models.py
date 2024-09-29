@@ -101,11 +101,11 @@ class Message(BaseModel):
     def save_audio(self, audio):
         path = os.path.join(MESSAGE_DIR, "users", self.user, str(self.id) + ".wav")
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with wave.open(path, 'w') as wav_file:
+        with wave.open(path, "w") as wav_file:
             # Define audio parameters
             audio = np.int16(audio * 32767)
-            wav_file.setnchannels(1) # Mono
-            wav_file.setsampwidth(2) # Two bytes per sample
+            wav_file.setnchannels(1)  # Mono
+            wav_file.setsampwidth(2)  # Two bytes per sample
             wav_file.setframerate(16000)
 
             # Convert the NumPy array to bytes and write it to the WAV file
@@ -181,9 +181,7 @@ class I18NConfig(BaseModel):
 
     @classmethod
     def load_language(cls, language):
-        path = os.path.join(
-            MESSAGE_DIR, "i18n", language + ".json"
-        )
+        path = os.path.join(MESSAGE_DIR, "i18n", language + ".json")
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
         try:
@@ -205,7 +203,6 @@ class I18NConfig(BaseModel):
                 device=settings.device,
             )
 
-
             for k in I18NMessages.messages:
                 out = translation_model(k)
                 message_dict[k] = " ".join([m["translation_text"] for m in out])
@@ -213,16 +210,16 @@ class I18NConfig(BaseModel):
             for k in I18NMessages.messages:
                 message_dict[k] = k
 
-
-        messages = cls(language=language, last_update_hash=I18NMessages.get_hash(), messages=message_dict)
+        messages = cls(
+            language=language,
+            last_update_hash=I18NMessages.get_hash(),
+            messages=message_dict,
+        )
         messages.save_to_file()
         return messages
 
-
     def save_to_file(self):
-        path = os.path.join(
-            MESSAGE_DIR, "i18n", self.language + ".json"
-        )
+        path = os.path.join(MESSAGE_DIR, "i18n", self.language + ".json")
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
         with open(path, "w") as f:

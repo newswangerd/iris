@@ -1,14 +1,8 @@
 import React, { useContext, useEffect, useState } from "react";
 import {
-  VStack,
   Box,
-  Menu,
   Button,
-  MenuItem,
-  MenuButton,
-  MenuList,
   FormControl,
-  FormLabel,
   Input,
   Select,
   Modal,
@@ -125,6 +119,7 @@ const QuickQR = ({ client, isOpen, onOpen, onClose }) => {
         <Center padding={"20px"}>
           {authUrl ? <QRCode size={256} value={authUrl} /> : null}
         </Center>
+        {authUrl}
       </ModalBody>
 
       <ModalFooter>

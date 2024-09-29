@@ -69,6 +69,7 @@ async def login_auth_code(response: Response, credentials: AuthCode):
 async def logout(response: Response):
     response.delete_cookie("session_token")
 
+
 @app.get("/translations/{language}")
 async def get_translations(language) -> I18NConfig:
     if language in settings.supported_languages or language == settings.base_language:

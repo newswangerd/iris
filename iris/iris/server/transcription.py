@@ -7,26 +7,14 @@ from iris.server.models import Message, StreamMode, TranscriptionMessage
 
 class Translator:
     def __init__(self):
-        self.translation_models = {}
-
-        # TODO: might be worthwhile to use the helsinki multi language models for english.
-        for lang in settings.supported_languages:
-            if lang == settings.base_language:
-                continue
-            self.translation_models[(settings.base_language, lang)] = pipeline(
-                "translation",
-                model=f"Helsinki-NLP/opus-mt-{settings.base_language}-{lang}",
-                device=settings.device,
-            )
-
-            self.translation_models[(lang, settings.base_language)] = pipeline(
-                "translation",
-                model=f"Helsinki-NLP/opus-mt-{lang}-{settings.base_language}",
-                device=settings.device,
-            )
+        self.model = pipe = pipeline(
+            "translation",
+            model="facebook/mbart-large-50-many-to-many-mmt",
+            device=settings.device,
+        )
 
     def translate(self, text: str, lang_key: tuple[str, str]) -> str:
-        out = self.translation_models[lang_key](text)
+        out = self.model(text, src_lang=lang_key[0], tgt_lang=lang_key[1])
         return " ".join([m["translation_text"] for m in out])
 
 
