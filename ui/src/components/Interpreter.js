@@ -59,6 +59,16 @@ const Interpreter = ({ client, showInstructions }) => {
   };
 
   useEffect(() => {
+    document.addEventListener("visibilitychange", (event) => {
+      if (
+        event.target.visibilityState === "visible" &&
+        ws.current &&
+        ws.current.readyState !== WebSocket.OPEN
+      ) {
+        window.location.reload();
+      }
+    });
+
     connectWS();
 
     if (

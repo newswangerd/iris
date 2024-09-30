@@ -34,6 +34,7 @@ class I18NMessages:
         "Close",
         "Clear",
         "edited",
+        "Refresh"
     ]
 
     @classmethod

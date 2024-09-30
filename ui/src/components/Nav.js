@@ -7,6 +7,7 @@ import {
   MessageCircleMore,
   Trash,
   QrCode,
+  RotateCw,
 } from "lucide-react";
 
 import {
@@ -83,6 +84,13 @@ const Nav = ({ setView, client }) => {
               </MenuItem>
             </>
           ) : null}
+
+          <MenuItem
+            icon={<RotateCw />}
+            onClick={() => window.location.reload()}
+          >
+            {t("Refresh")}
+          </MenuItem>
           <MenuItem icon={<LogOut />} onClick={logout}>
             {t("Logout")}
           </MenuItem>
