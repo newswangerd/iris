@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Trash, SendHorizontal, Volume2, Edit, X } from "lucide-react";
 import {
   Button,
@@ -20,8 +20,12 @@ import { TranslationsContext } from "../context.js";
 
 const Message = ({ message, acceptMsg, user, sayTTS }) => {
   const [editMode, setEditMode] = useState(false);
-  const [editText, setEditText] = useState(message.text);
+  const [editText, setEditText] = useState("");
   const t = useContext(TranslationsContext);
+
+  useEffect(() => {
+    setEditText(message.text);
+  }, [message]);
 
   let handleInputChange = (e) => {
     let inputValue = e.target.value;
@@ -40,6 +44,8 @@ const Message = ({ message, acceptMsg, user, sayTTS }) => {
         : message.text}
     </Text>
   );
+
+  const edit = <Textarea onChange={handleInputChange} value={editText} />;
 
   const leftButton = () => {
     if (message.user === user.name) {
@@ -94,8 +100,6 @@ const Message = ({ message, acceptMsg, user, sayTTS }) => {
       }
     }
   };
-
-  const edit = <Textarea onChange={handleInputChange} value={editText} />;
 
   return (
     <Card>
