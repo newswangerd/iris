@@ -5,6 +5,13 @@ from iris.server import settings
 from iris.server.models import Message, StreamMode, TranscriptionMessage
 
 
+HELSINKI_TO_MBART = {
+    "ru": "ru_RU",
+    "en": "en_XX",
+    "es": "es_XX"
+}
+
+
 class Translator:
     def __init__(self):
         self.model = pipe = pipeline(
@@ -14,7 +21,7 @@ class Translator:
         )
 
     def translate(self, text: str, lang_key: tuple[str, str]) -> str:
-        out = self.model(text, src_lang=lang_key[0], tgt_lang=lang_key[1])
+        out = self.model(text, src_lang= HELSINKI_TO_MBART[lang_key[0]], tgt_lang= HELSINKI_TO_MBART[lang_key[1]])
         return " ".join([m["translation_text"] for m in out])
 
 
