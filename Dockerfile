@@ -1,6 +1,10 @@
 FROM node:current-alpine
+RUN mkdir /opt/ui
+COPY ui/package.json /opt/ui
+COPY ui/package-lock.json /opt/ui
+RUN cd /opt/ui && npm install
 COPY ui /opt/ui
-RUN cd /opt/ui && npm install && npm run build
+RUN cd /opt/ui && npm run build
 
 FROM nvidia/cuda:12.6.1-cudnn-runtime-ubuntu24.04
 

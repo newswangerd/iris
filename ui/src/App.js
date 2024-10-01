@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext } from "react";
+import React, { useState, useEffect } from "react";
 import APIClient from "./api";
 import Interpreter from "./components/Interpreter";
 import Login from "./components/Login";
@@ -75,8 +75,6 @@ const AudioStreamingApp = () => {
     }
     return translations["messages"][msg];
   };
-
-  console.log(view);
 
   return (
     <UserContext.Provider value={user}>

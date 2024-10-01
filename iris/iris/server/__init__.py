@@ -18,7 +18,8 @@ class Settings(BaseModel):
     whisper_model: str = "base"
     ssl_keyfile: Optional[str] = "./dev/certs/key.pem"
     ssl_certfile: Optional[str] = "./dev/certs/cert.pem"
-    device: str = "cpu"
+    translation_device: str = "cpu"
+    whisper_device: str = "cpu"
     auto_code_reload: bool = True
     http_port: int = 8000
 

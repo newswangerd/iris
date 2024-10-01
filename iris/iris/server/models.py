@@ -200,7 +200,7 @@ class I18NConfig(BaseModel):
             translation_model = pipeline(
                 "translation",
                 model=f"Helsinki-NLP/opus-mt-en-{language}",
-                device=settings.device,
+                device=settings.translation_device,
             )
 
             for k in I18NMessages.messages:

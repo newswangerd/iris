@@ -11,113 +11,112 @@ const Interpreter = ({ client, showInstructions }) => {
   const [isRecording, setIsRecording] = useState(false);
   const ws = useRef(null);
   const [sentMsg, setSentMsg] = useState([]);
-  const [hasAudioPerms, setHasAudioPerms] = useState(false);
   const synth = window.speechSynthesis;
   // const [isConversationMode, setIsConversationMode] = useState(
   //   localStorage.getItem("isConversationMode") === "true" ? true : false,
   // );
   const [isConversationMode, setIsConversationMode] = useState(true);
 
-  const oggRecorder = useRef(null);
+  const [oggRecorder, setOggRecorder] = useState(null);
+  const [isVisible, setIsVisible] = useState(true);
+
+  const micStreams = useRef([]);
 
   const user = useContext(UserContext);
 
-  const wsEvent = (event) => {
-    const msg = JSON.parse(event.data);
-    if (msg.id) {
-      if (
-        msg.is_accepted &&
-        (msg.user === user.name || msg.language !== user.language)
-      ) {
-        setSentMsg((oldArray) => [JSON.parse(event.data), ...oldArray]);
-        if (msg.user !== user.name) {
-          // if (msg.translated_text[user.language] && isConversationMode) {
-          //   sayTTS(msg, user.language);
-          // }
-        }
-      }
-    }
-  };
-
-  const connectWS = () => {
-    if (!ws.current || ws.current.readyState === WebSocket.CLOSED) {
-      // Initialize WebSocket connection
-      var loc = window.location,
-        new_uri;
-      if (loc.protocol === "https:") {
-        new_uri = "wss:";
-      } else {
-        new_uri = "ws:";
-      }
-      new_uri += "//" + loc.host;
-
-      const whisper_ws = new_uri + "/api/ws-whisper";
-
-      ws.current = new WebSocket(whisper_ws);
-      ws.current.addEventListener("message", wsEvent);
-    }
-  };
-
   useEffect(() => {
-    document.addEventListener("visibilitychange", (event) => {
-      if (
-        event.target.visibilityState === "visible" &&
-        ws.current &&
-        ws.current.readyState !== WebSocket.OPEN
-      ) {
-        window.location.reload();
-      }
-    });
+    if (!isVisible) return;
 
-    connectWS();
-
-    if (
-      (oggRecorder.current &&
-        oggRecorder.current.audioContext.state !== "running") ||
-      !oggRecorder.current
-    ) {
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then((stream) => {
-          const context = new AudioContext();
-          const sourceNode = context.createMediaStreamSource(stream);
-          oggRecorder.current = new Recoder({
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((stream) => {
+        // This is a stupid solution to get around react's stupid strict mode.
+        // I can't figure out how to cancel this promise in the clenup function
+        // so we're going to get around this by just saving all the streams that
+        // get created and clean them all up.
+        micStreams.current.push(stream);
+        console.log("creating stream");
+        const context = new AudioContext();
+        const sourceNode = context.createMediaStreamSource(stream);
+        setOggRecorder(
+          new Recoder({
             sourceNode: sourceNode,
             streamPages: true,
             encoderSampleRate: 16000,
             numberOfChannels: 1,
             encoderFrameSize: 20,
             maxFramesPerPage: 10,
-          });
+          }),
+        );
+      })
+      .catch((err) => console.log(err));
+    return () => {
+      micStreams.current.forEach((stream) =>
+        stream.getTracks().forEach((track) => track.stop()),
+      );
+      micStreams.current = [];
+      setOggRecorder(null);
+    };
+  }, [isVisible]);
 
-          oggRecorder.current.on_start = () => {};
+  useEffect(() => {
+    const callback = (event) => {
+      setIsVisible(!document.hidden);
+    };
+    document.addEventListener("visibilitychange", callback);
+    return () => document.removeEventListener("visibilitychange", callback);
+  }, []);
 
-          oggRecorder.current.ondataavailable = (data) => {
-            ws.current.send(data);
-          };
+  useEffect(() => {
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) return;
+    if (!oggRecorder) return;
 
-          setHasAudioPerms(true);
-        })
-        .catch((err) => console.log(err));
+    const wsEvent = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.id) {
+        if (
+          msg.is_accepted &&
+          (msg.user === user.name || msg.language !== user.language)
+        ) {
+          setSentMsg((oldArray) => [JSON.parse(event.data), ...oldArray]);
+          if (msg.user !== user.name) {
+            // if (msg.translated_text[user.language] && isConversationMode) {
+            //   sayTTS(msg, user.language);
+            // }
+          }
+        }
+      }
+    };
+
+    // Initialize WebSocket connection
+    var loc = window.location,
+      new_uri;
+    if (loc.protocol === "https:") {
+      new_uri = "wss:";
+    } else {
+      new_uri = "ws:";
     }
+    new_uri += "//" + loc.host;
+
+    const whisper_ws = new_uri + "/api/ws-whisper";
+
+    ws.current = new WebSocket(whisper_ws);
+    ws.current.addEventListener("message", wsEvent);
+
+    oggRecorder.ondataavailable = (data) => {
+      ws.current.send(data);
+    };
 
     client.get_recent_messages().then((resp) => {
       setSentMsg(resp.data);
     });
 
+    const wsCurrent = ws.current;
+
     return () => {
-      if (ws.current.readyState === WebSocket.OPEN) ws.current.close();
+      wsCurrent.close();
     };
-  }, []);
-
-  useEffect(() => {
-    ws.current.addEventListener("message", wsEvent);
-    return () => ws.current.removeEventListener("message", wsEvent);
-  }, [isConversationMode, user]);
-
-  // useEffect(() => {
-  //   localStorage.setItem("isConversationMode", String(isConversationMode));
-  // }, [isConversationMode]);
+  }, [oggRecorder]);
 
   const sayTTS = (message, lang) => {
     const utterance = new SpeechSynthesisUtterance(
@@ -133,15 +132,14 @@ const Interpreter = ({ client, showInstructions }) => {
       e.stopPropagation();
     }
 
-    if (isRecording) return;
-    if (oggRecorder.current.state === "loading") return;
-
-    if (ws.current.readyState !== WebSocket.OPEN) {
+    if (ws.current && ws.current.readyState !== WebSocket.OPEN) {
       window.location.reload();
       return;
     }
 
-    oggRecorder.current.onstart = () => {
+    oggRecorder.onstart = () => {
+      setIsRecording(true);
+
       const start_msg = "START:";
 
       const stream_meta = {};
@@ -155,9 +153,7 @@ const Interpreter = ({ client, showInstructions }) => {
       ws.current.send(start_msg + JSON.stringify(stream_meta));
     };
 
-    oggRecorder.current.start();
-
-    setIsRecording(true);
+    oggRecorder.start();
   };
 
   const stopRecording = (e, cancel = false) => {
@@ -168,7 +164,7 @@ const Interpreter = ({ client, showInstructions }) => {
 
     if (!isRecording) return;
 
-    oggRecorder.current.onstop = () => {
+    oggRecorder.onstop = () => {
       setIsRecording(false);
 
       if (cancel) {
@@ -178,12 +174,10 @@ const Interpreter = ({ client, showInstructions }) => {
       }
     };
 
-    oggRecorder.current.stop();
+    oggRecorder.stop();
   };
 
   const acceptMsg = (message, modifiedText) => {
-    console.log(message);
-    console.log(modifiedText);
     client.accept_message(message, modifiedText).then(() => {});
   };
 
@@ -218,12 +212,12 @@ const Interpreter = ({ client, showInstructions }) => {
             onTouchCancel={stopRecording}
             onTouchMove={(e) => e.preventDefault()}
             colorScheme={isRecording ? "green" : "red"}
-            isDisabled={!hasAudioPerms}
+            isDisabled={!oggRecorder}
             size={"lg"}
             height={"125px"}
             width={"100%"}
           >
-            {getButtonIcon(isRecording, hasAudioPerms)}
+            {getButtonIcon(isRecording, oggRecorder)}
           </Button>
         </Center>
       </Box>
@@ -231,8 +225,8 @@ const Interpreter = ({ client, showInstructions }) => {
   );
 };
 
-const getButtonIcon = (isRecording, hasAudioPerms) => {
-  if (!hasAudioPerms) {
+const getButtonIcon = (isRecording, oggRecorder) => {
+  if (!oggRecorder) {
     // return <Fingerprint size={40} />;
     return <MicOff size={40} />;
   }

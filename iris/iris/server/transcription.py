@@ -17,7 +17,7 @@ class Translator:
         self.model = pipe = pipeline(
             "translation",
             model="facebook/mbart-large-50-many-to-many-mmt",
-            device=settings.device,
+            device=settings.translation_device,
         )
 
     def translate(self, text: str, lang_key: tuple[str, str]) -> str:
@@ -30,7 +30,7 @@ class Transcriber:
         self.whisper = faster_whisper.WhisperModel(
             # model_size_or_path="distil-large-v3",
             model_size_or_path=settings.whisper_model,
-            device=settings.device,
+            device=settings.whisper_device,
             cpu_threads=1,
             num_workers=1,
             # compute_type="default",
