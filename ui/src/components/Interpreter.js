@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
-import { Mic, MicOff, RotateCw } from "lucide-react";
+import { Mic, MicOff } from "lucide-react";
 import Message from "./Message";
 import { Button, Center, Spinner, Flex, Box, Divider } from "@chakra-ui/react";
 import { UserContext } from "../context.js";
@@ -237,12 +237,13 @@ const getButtonIcon = (isRecording, hasAudioPerms) => {
     return <MicOff size={40} />;
   }
   if (isRecording) {
-    return <Spinner />;
+    return <Spinner style={{ pointerEvents: "none" }} />;
   }
 
+  // "pointerEvents: none" prevents the button from getting stuck
   return (
     <>
-      <Mic size={40} />
+      <Mic size={40} style={{ pointerEvents: "none" }} />
     </>
   );
 };
