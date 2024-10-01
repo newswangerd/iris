@@ -42,8 +42,6 @@ const InstructionModal = ({ showOnLoad }) => {
               <ListItem>
                 {t("Your message will be translated and sent to me.")}
               </ListItem>
-
-              <InstructionAnimation />
             </OrderedList>
           </ModalBody>
 

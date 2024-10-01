@@ -11,13 +11,12 @@ const Interpreter = ({ client, showInstructions }) => {
   const [isRecording, setIsRecording] = useState(false);
   const ws = useRef(null);
   const [sentMsg, setSentMsg] = useState([]);
-  const synth = window.speechSynthesis;
-  // const [isConversationMode, setIsConversationMode] = useState(
-  //   localStorage.getItem("isConversationMode") === "true" ? true : false,
-  // );
-  const [isConversationMode, setIsConversationMode] = useState(true);
+
+  // TODO: Need to get rid of this
+  const isConversationMode = true;
 
   const [oggRecorder, setOggRecorder] = useState(null);
+  const [wsReady, setWsReady] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
 
   const micStreams = useRef([]);
@@ -35,7 +34,6 @@ const Interpreter = ({ client, showInstructions }) => {
         // so we're going to get around this by just saving all the streams that
         // get created and clean them all up.
         micStreams.current.push(stream);
-        console.log("creating stream");
         const context = new AudioContext();
         const sourceNode = context.createMediaStreamSource(stream);
         setOggRecorder(
@@ -55,7 +53,10 @@ const Interpreter = ({ client, showInstructions }) => {
         stream.getTracks().forEach((track) => track.stop()),
       );
       micStreams.current = [];
-      setOggRecorder(null);
+      setOggRecorder((current) => {
+        if (current) current.close();
+        return null;
+      });
     };
   }, [isVisible]);
 
@@ -111,10 +112,15 @@ const Interpreter = ({ client, showInstructions }) => {
       setSentMsg(resp.data);
     });
 
+    ws.current.addEventListener("open", (event) => {
+      setWsReady(true);
+    });
+
     const wsCurrent = ws.current;
 
     return () => {
       wsCurrent.close();
+      setWsReady(false);
     };
   }, [oggRecorder]);
 
@@ -123,7 +129,7 @@ const Interpreter = ({ client, showInstructions }) => {
       message.translated_text[lang],
     );
     utterance.lang = lang;
-    synth.speak(utterance);
+    window.speechSynthesis.speak(utterance);
   };
 
   const startRecording = async (e) => {
@@ -132,14 +138,17 @@ const Interpreter = ({ client, showInstructions }) => {
       e.stopPropagation();
     }
 
-    if (ws.current && ws.current.readyState !== WebSocket.OPEN) {
+    if (oggRecorder.state === "recording") return;
+    if (oggRecorder.state === "loading") return;
+    if (isRecording) return;
+
+    // TODO: why does the audio recorder get stuck in "suspended"?
+    if (oggRecorder.audioContext.state !== "running") {
       window.location.reload();
-      return;
     }
 
     oggRecorder.onstart = () => {
       setIsRecording(true);
-
       const start_msg = "START:";
 
       const stream_meta = {};
@@ -212,7 +221,7 @@ const Interpreter = ({ client, showInstructions }) => {
             onTouchCancel={stopRecording}
             onTouchMove={(e) => e.preventDefault()}
             colorScheme={isRecording ? "green" : "red"}
-            isDisabled={!oggRecorder}
+            isDisabled={!oggRecorder || !wsReady}
             size={"lg"}
             height={"125px"}
             width={"100%"}
